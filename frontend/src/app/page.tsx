@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { 
   fetchStats, 
   fetchLetters, 
+  deleteLetter,
   getDownloadUrl,
   DashboardStats, 
   Letter 
@@ -12,6 +13,7 @@ import {
 import { StatusBadge, PriorityBadge, TypeBadge, PriorityIcon } from '@/components/StatusBadge';
 import EditLetterModal from '@/components/EditLetterModal';
 import TrackingModal from '@/components/TrackingModal';
+import ActionDropdown from '@/components/ActionDropdown';
 import { 
   Inbox, 
   Send, 
@@ -385,49 +387,21 @@ export default function DashboardPage() {
                         )}
                       </td>
                       <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center space-x-1.5">
-                        {/* Track Letter Status */}
-                        <button
-                          onClick={() => setTrackingLetter(l)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white transition shadow-2xs"
-                          title={`Track status for ${l.referenceNumber}`}
-                          aria-label={`Track status for ${l.referenceNumber}`}
-                        >
-                          <Activity className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Download Document */}
-                        <a
-                          href={getDownloadUrl(l.id)}
-                          download
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white transition shadow-2xs"
-                          title={`Download document for ${l.referenceNumber}`}
-                          aria-label={`Download document for ${l.referenceNumber}`}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </a>
-
-                        {/* Edit Letter */}
-                        <button
-                          onClick={() => setEditingLetter(l)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition shadow-2xs"
-                          title={`Edit letter ${l.referenceNumber}`}
-                          aria-label={`Edit letter ${l.referenceNumber}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* View Details */}
-                        <Link
-                          href={`/letters/${l.id}`}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition shadow-2xs"
-                          title={`View details for ${l.referenceNumber}`}
-                          aria-label={`View details for ${l.referenceNumber}`}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </td>
+                        <ActionDropdown
+                          letter={l}
+                          onTrack={(letter) => setTrackingLetter(letter)}
+                          onEdit={(letter) => setEditingLetter(letter)}
+                          onDelete={async (letter) => {
+                            try {
+                              await deleteLetter(letter.id);
+                              loadData();
+                            } catch (err) {
+                              console.error('Failed to delete letter:', err);
+                            }
+                          }}
+                          downloadUrl={getDownloadUrl(l.id)}
+                        />
+                      </td>
                   </tr>
                   );
                 })}

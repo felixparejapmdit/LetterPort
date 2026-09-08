@@ -1,103 +1,152 @@
-# Development Plan: Robust Letter Management System (LMS) - LetterPort
+# Development Plan & Specification: LetterPort Letter Management System (LMS)
 
-This document serves as the master blueprint for developing the Letter Management System (LetterPort). It incorporates Object-Oriented Programming (OOP) principles, PocketBase backend database integration, automated background OCR, NAS network storage integration, a comprehensive Dockerized OS-agnostic infrastructure, and a complete Software Development Life Cycle (SDLC) strategy.
+This document serves as the master blueprint for the Letter Management System (**LetterPort**). It details the functional requirements, Object-Oriented Programming (OOP) architecture, Role-Based Access Control (RBAC) matrix, automated background text recognition (OCR), Network-Attached Storage (NAS) plug-and-play deployment, printable sticker/routing slip generation, automated SLA tracking, and containerized deployment.
 
 ---
 
 ## Part 1: Software Requirements Specification (SRS)
 
 ### 1.1 Purpose
-To digitize, organize, and track all incoming and outgoing correspondence through a centralized, searchable, and secure platform utilizing automated OCR technology, Network Attached Storage (NAS) support, and instant keyword indexing.
+LetterPort is engineered to digitize, organize, index, and monitor all incoming and outgoing institutional correspondence through a centralized, secure platform featuring automated OCR scanning, institutional VEM tracking codes, real-time keyword indexing, automated Service Level Agreement (SLA) due date alerts, and dedicated role-based access control.
 
-### 1.2 Functional Requirements
-1.  **Letter Encoding & Tracking:** Capture metadata (Reference Number, VEM-Number, Direction [Incoming/Outgoing], Dates, Sender, Recipient, Subject, Priority, Status, Tags).
-2.  **Document Storage & NAS Integration:** Upload and securely store PDF/Image scans with automated SHA-256 integrity verification and optional real-time backup to office NAS server (SMB / NFS / Shared Folders).
-3.  **OCR Processing:** Automated background extraction of text from documents using Tesseract OCR with confidence scoring.
-4.  **Advanced Live Search & Global Quick Access:**
-    - Real-time debounced full-text search as you type across letter metadata and extracted OCR document bodies.
-    - Global `Ctrl+K` (or `Cmd+K`) command search modal accessible from any page.
-5.  **Viewing & Retrieval:** In-browser PDF and image viewing with interactive zoom/rotate, side-by-side OCR text inspector, and secure file downloading.
-6.  **User Experience & Accessibility:**
-    - Dark mode and light mode theme support with persistent preferences.
-    - Fully mobile-responsive layouts adapting across smartphone, tablet, and desktop viewports.
-    - Simplified, easy-to-understand terminology across all interfaces.
-    - Built-in demo sample data management (Load and Clear sample correspondence) in Settings.
+### 1.2 Core Functional Requirements
 
----
+1. **Authentication & Access Control (RBAC):**
+   - Secure login mechanism with role-differentiated access views.
+   - **Administrator**: Full system authority (CRUD on letters, record deletion, user management, reference number formatting, database backup/restore, system wipe).
+   - **Staff User**: Standard daily operational workflow (viewing, searching, encoding letters, tracking progress, printing QR stickers & routing slips, downloading PDFs). Record deletion, user management, and system administration tools are hidden and restricted.
+   - Built-in credentials: `admin` / `password` (Administrator) and `user` / `password` (Staff User).
 
-## Part 2: Software Design Document (SDD) & OOP Architecture
+2. **Letter Encoding & Automated SLA Management:**
+   - Capture metadata: Reference Number, VEM-Number, Direction (`INCOMING` / `OUTGOING`), Sender, Recipient, Subject, Letter Date, Target Due Date (SLA), Status, Priority, and Tags.
+   - **Automated SLA Calculation**: Target resolution date automatically calculated based on priority level (+3 days for Urgent, +5 days for High, +7 days for Normal) with optional manual override.
+   - **Overdue Detection**: Automatically flags correspondence as Overdue if the target date has passed and status is not marked `Completed` or `Archived`, surfacing an animated red badge and dashboard metric.
 
-### 2.1 System Architecture
-The application uses a decoupled Client-Server model:
-*   **Frontend:** Next.js (React 18/19), Tailwind CSS with Dark Mode, Lucide Icons, responsive navigation drawer, and `Ctrl+K` search modal.
-*   **Backend:** Node.js (Express) using TypeScript for strict typing and OOP enforcement.
-*   **Database:** PocketBase (lightweight embedded Go/SQLite backend with real-time REST API and Admin UI on port 8090) with SQLite fallback.
-*   **Storage & NAS Layer:** Local storage with SHA-256 checksums and configurable NAS integration (SMB/CIFS, NFS, Mounted Network Share, WebDAV).
-*   **Queue/Worker:** Dedicated background OCR worker service for asynchronous Tesseract document processing.
+3. **Printable Barcode / QR Code Stickers & Official Routing Slips:**
+   - **Folder & Envelope Stickers**: Vector QR codes (pointing to `/letters/:id?track=true`) formatted for dedicated sticker printers or standard label sheets, displayable on physical folders and envelope covers.
+   - **Official Transmittal / Routing Slip**: Formatted 1-page printable document detailing letter metadata, QR code, departmental routing stage checklists, instructions, and physical signature sign-offs.
 
-### 2.2 Object-Oriented Programming (OOP) Application
-The backend follows a strict **Service-Repository Pattern** to maintain modularity, encapsulation, and scalability.
+4. **Document Storage & Plug-and-Play NAS Integration:**
+   - Store uploaded scans and PDFs using relative directory mounts (`./letterport_data` and `./db_data`).
+   - Completely zero-config: No hardcoded drive letters (`/volume1/`) required. Compatible with Synology DSM, QNAP QTS, TrueNAS, Unraid, and generic Linux servers.
 
-*   **Controllers (Presentation Layer):**
-    *   `LetterController`: Handles HTTP requests for letter encoding, retrieval, updates, file streaming, and re-running OCR.
-    *   `SearchController`: Handles full-text search requests matching metadata and OCR text.
-    *   `StatsController`: Provides dashboard metrics.
-    *   `SettingsController`: Manages NAS storage configuration, connection testing, and demo sample data.
-*   **Services (Business Logic Layer):** 
-    *   `LetterService`: Manages business rules, reference generation, VEM-Number tracking, and dispatches background OCR jobs.
-    *   `SettingsService`: Manages NAS configuration persistence, connectivity diagnostics, and sample letter fixtures.
-    *   `OCRService`: `IOCRService` polymorphic base class. Concrete classes like `TesseractOCRService` implement extraction logic for images and PDFs.
-    *   `StorageService`: `IStorageService` interface implemented by `LocalStorageService` with stream piping and checksum verification.
-    *   `QueueService`: `IQueueService` interface for async task processing.
-*   **Repositories (Data Access Layer):**
-    *   `ILetterRepository`: Database-agnostic contract.
-    *   `PocketBaseLetterRepository`: Implements data access using the PocketBase JavaScript SDK (`pocketbase`).
-    *   `SqliteLetterRepository`: Secondary/local zero-dependency SQLite repository.
-*   **Models/Entities:**
-    *   `Letter`: Encapsulates `id`, `referenceNumber`, `vemNumber` (official VEM tracking code), `type`, `sender`, `recipient`, `subject`, `letterDate`, `receivedSentDate`, `status`, `priority`, and `tags`.
-    *   `Attachment`: Encapsulates file metadata, mime type, and SHA-256 checksum.
-    *   `OCRRecord`: Encapsulates OCR status (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), confidence score, and extracted text.
+5. **Lateral 5-Stage Tracking Drawer:**
+   - Replaces disruptive modal popups with a sleek, full-height slide-over drawer on the right side of the screen (~28% screen width).
+   - Shows active stage pulses (Drafted ➔ Scanned ➔ Under Review ➔ Approved/Completed ➔ Archived), OCR accuracy score, SLA countdown, and 1-click share URL.
+
+6. **Table Action Dropdown Hamburger Menu:**
+   - Consolidates inline action buttons into a single compact `...` button opening a floating contextual popover (Track Progress, View Document, Edit Details, Download PDF, Sticker & Slip, Delete Letter).
+   - Reduces horizontal table footprint by over 100px, eliminating horizontal scrolling on smaller screens.
+
+7. **Advanced Full-Text Search & Quick Access:**
+   - Debounced live search across reference numbers, VEM codes, senders, recipients, subjects, and extracted OCR text.
+   - Global keyboard command palette (`Ctrl+K` / `Cmd+K`) accessible across all pages.
+
+8. **Customizable Reference Numbering Format:**
+   - Institutional prefix configuration (e.g. `LP`, `DOC`, `OFFICE`), separator (`-`, `/`, `.`), and sequential padding (3 to 6 digits) with real-time live preview.
 
 ---
 
-## Part 3: Containerization & Infrastructure (Docker & OS-Agnostic)
+## Part 2: Complete Access Matrix & Role View Breakdown
 
-The system is designed to be 100% OS-agnostic, easily cloned from GitHub, and deployable on Windows, macOS, or Linux (including Proxmox VE).
-
-### 3.1 Docker Compose Services
-1.  **`web` (Next.js):** Runs the frontend UI on port 3000 with Dark Mode and responsive views.
-2.  **`api` (Node.js/Express):** Handles API requests and REST endpoints on port 5000.
-3.  **`pocketbase` (PocketBase):** High-performance Go backend/database running on port 8090 with built-in Admin UI (`/_/`).
-4.  **`worker` (Node.js/Tesseract):** Dedicated background service for CPU-heavy OCR processing.
-5.  **`nginx` (Reverse Proxy):** Routes traffic to `web`, `api`, or `pocketbase` and handles SSL/TLS termination.
-
-### 3.2 Volume & Network Strategy
-*   **Networks:** Internal bridge network (`lms-network`) isolating internal services while exposing public HTTP/HTTPS ports.
-*   **Volumes:** 
-    *   `pb_data`: Persistent PocketBase database files.
-    *   `storage_volume`: Shared document storage for uploaded scans and PDFs.
+| Feature / Capability | Administrator | Staff User | Security & Governance Rationale |
+| :--- | :---: | :---: | :--- |
+| **Dashboard Analytics & Overdue Metrics** | ✅ Full | ✅ Full | Shared visibility into institutional workload and pending correspondence. |
+| **Search & Ctrl+K Global Modal** | ✅ Full | ✅ Full | Universal retrieval across correspondence and scanned OCR bodies. |
+| **Document Viewer & OCR Text Inspector** | ✅ Full | ✅ Full | Side-by-side reading, rotation, zooming, and text copy. |
+| **Lateral Tracking Drawer** | ✅ Full | ✅ Full | 5-stage timeline progression and SLA countdown inspection. |
+| **Download Document Files** | ✅ Full | ✅ Full | Retrieval of original scanned PDFs and image files. |
+| **Add / Encode New Letters** | ✅ Full | ✅ Full | Ingestion of incoming correspondence and outgoing memo dispatch. |
+| **Edit Letter Details & Status** | ✅ Full | ✅ Full | Workflow updates, notes, tagging, and due date adjustments. |
+| **Print QR Stickers & Routing Slips** | ✅ Full | ✅ Full | Physical document handling and routing transmittal preparation. |
+| **Delete Letter Records** | ✅ **Allowed** | ❌ **Restricted** | Deletions restricted to prevent accidental destruction of audit records. |
+| **User Account Management** | ✅ **Allowed** | ❌ **Restricted** | Creating accounts, changing roles, and resetting other staff passwords. |
+| **Self Password Change** | ✅ Allowed | ✅ Allowed | Every user can update their personal password. |
+| **Reference Number Format Customizer** | ✅ **Allowed** | ❌ **Restricted** | Numbering schemes must remain institutionally consistent. |
+| **NAS Storage & System Maintenance** | ✅ **Allowed** | ❌ **Restricted** | Host hardware, mounts, and software updates are administrative tasks. |
+| **Letters Backup & Recovery** | ✅ **Allowed** | ❌ **Restricted** | System snapshot export and restoration are restricted to administrators. |
+| **Reset / Wipe Letters Database** | ✅ **Allowed** | ❌ **Restricted** | Database purge and sample fixtures reloading require admin clearance. |
+| **Access Matrix Management** | ✅ **Allowed** | 👁️ **Read-Only** | Staff users can inspect granted permissions but cannot alter policies. |
 
 ---
 
-## Part 4: Software Development Life Cycle (SDLC)
+## Part 3: Object-Oriented Architecture (SDD)
 
-### Phase 1: Requirements & Architecture
-*   Finalize SRS, SDD, and VEM-Number specification.
-*   Configure PocketBase collections and REST API contracts.
-*   Setup OS-agnostic repository structure and Git configuration.
+LetterPort strictly adheres to the **Service-Repository Pattern** in TypeScript:
 
-### Phase 2: Implementation & Enhancement Sprints
-*   **Sprint 1 (Core & VEM-Number):** Implement `Letter` entity with `vemNumber`, DTOs, and repository interfaces.
-*   **Sprint 3 (PocketBase Integration):** Build `PocketBaseLetterRepository`, add PocketBase Docker service, and support auto-schema creation.
-*   **Sprint 4 (Dark Mode & UI Polish):** Add dark mode theme, simplified friendly copy, responsive hamburger drawer, and `Eye` icon action buttons.
-*   **Sprint 5 (Live Search & Ctrl+K):** Implement debounced as-you-type search in `/search` and global `Ctrl+K` command search modal dialog.
-*   **Sprint 6 (NAS Integration & Sample Data):** Settings page for NAS configuration, connection testing, and 1-click sample data load/clear.
+```
+LetterPort/
+├── backend/
+│   ├── src/
+│   │   ├── entities/
+│   │   │   ├── User.ts             # Domain model for User (id, username, passwordHash, role)
+│   │   │   ├── Letter.ts           # Letter aggregate with dueDate, vemNumber, priority, status
+│   │   │   ├── Attachment.ts       # Document scan metadata and SHA-256 integrity hash
+│   │   │   └── OCRRecord.ts        # OCR transcription status, text, and confidence score
+│   │   ├── controllers/
+│   │   │   ├── AuthController.ts   # /api/auth/login, /api/auth/me
+│   │   │   ├── UserController.ts   # /api/users CRUD (Admin-guarded)
+│   │   │   ├── SettingsController.ts # Format customizer, backups, storage
+│   │   │   ├── LetterController.ts # /api/letters, SLA tracking, reference generation
+│   │   │   ├── SearchController.ts # /api/search full-text querying
+│   │   │   └── StatsController.ts  # /api/stats including overdueLetters counter
+│   │   ├── services/
+│   │   │   ├── LetterService.ts    # SLA computation, validation, reference sequencing
+│   │   │   ├── SettingsService.ts  # Backup export/restore, reference formatting, sample data
+│   │   │   ├── OCRService.ts       # Asynchronous OCR engine abstraction
+│   │   │   └── StorageService.ts   # Document streaming and checksum verification
+│   │   └── repositories/
+│   │       ├── ILetterRepository.ts # Database contract
+│   │       └── SqliteLetterRepository.ts # SQLite + Postgres persistence layer
+│   └── index.ts                    # Express bootstrap on port 8766
+│
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx            # Dashboard with SLA metrics & ActionDropdown table
+│   │   │   ├── login/page.tsx      # Minimalist login page (zero menubar)
+│   │   │   ├── letters/page.tsx    # Letters catalogue with ActionDropdown & overdue filter
+│   │   │   ├── letters/[id]/page.tsx # Split-screen viewer & sticker/routing slip button
+│   │   │   ├── encode/page.tsx     # Letter ingestion form with automatic SLA due date
+│   │   │   ├── search/page.tsx     # Debounced live search
+│   │   │   ├── access-matrix/page.tsx # Dedicated Access Control & Permissions Matrix
+│   │   │   └── settings/page.tsx   # Role-guarded administration & profile settings
+│   │   ├── components/
+│   │   │   ├── Navbar.tsx          # Dynamic role navigation (hides completely on /login)
+│   │   │   ├── ActionDropdown.tsx  # Compact 3-dots table action menu
+│   │   │   ├── TrackingModal.tsx   # Right-side lateral full-height slide-over drawer
+│   │   │   ├── LetterStickerModal.tsx # Vector QR sticker & routing slip generator
+│   │   │   └── EditLetterModal.tsx # Due date & metadata editor
+│   │   └── context/
+│   │       └── AuthContext.tsx     # JWT storage, role state, and permission guards
+│   └── package.json
+│
+├── docker-compose.yml              # Production multi-container orchestration
+├── install.sh                      # 1-click zero-config installer
+└── README.md                       # Comprehensive deployment & user manual
+```
 
-### Phase 3: Testing & Verification
-*   **Unit Testing:** Validate `Letter` entity with `vemNumber` and status transitions.
-*   **Integration Testing:** Test PocketBase/SQLite queries, full-text search, and file upload pipelines.
-*   **Mobile & Cross-Platform Testing:** Verify responsive views across mobile, tablet, and desktop viewports in both light and dark themes.
+---
 
-### Phase 4: Deployment & Maintenance
-*   Provide one-click Windows runners (`start-dev.bat`, `start.ps1`) and cross-platform npm scripts (`npm run dev`).
-*   Production deployment via `docker compose up -d --build`.
+## Part 4: Containerization & Infrastructure
+
+- **Unique Port Assignment**:
+  - Web & Nginx Gateway: **`8765`** (replaces default ports to avoid collisions with Synology DSM, Plex, and Portainer).
+  - Backend API: **`8766`** (internal port `5000` mapped via reverse proxy).
+- **Persistent Volume Structure**:
+  - `./letterport_data`: Scanned correspondence files and document uploads.
+  - `./db_data`: PostgreSQL persistent relational database cluster.
+  - `./pb_data`: PocketBase storage (if running embedded engine).
+
+---
+
+## Part 5: SDLC & Enhancement Sprints
+
+* **Sprint 1 (Foundations):** Core entities, VEM institutional tracking numbers, and basic CRUD.
+* **Sprint 2 (OCR & Search):** Tesseract OCR pipeline, live search, and global `Ctrl+K` command modal.
+* **Sprint 3 (NAS Hardening):** Relative storage bind-mounts, unique safe ports (`8765` & `8766`), and 1-click `install.sh`.
+* **Sprint 4 (Backup & Table Improvements):** Full JSON backup/restore and inline dashboard editing.
+* **Sprint 5 (Authentication & RBAC):** Role models, JWT session flow, `admin` and `user` accounts, and role-based interface guarding.
+* **Sprint 6 (QR Code & SLA Alerts):** Physical QR sticker generator, official transmittal slips, and automated SLA due date calculation with overdue flags.
+* **Sprint 7 (Lateral Tracking & Custom Formats):** Full-height right-side slide-over drawer and customizable reference number formatting.
+* **Sprint 8 (Access Matrix, Table Hamburger & Clean UI):** Dedicated `/access-matrix` page, role view differentiation, compact `ActionDropdown` menu in tables, shortened search bar, and clean minimalist login page.

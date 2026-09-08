@@ -30,6 +30,7 @@ export default function EncodePage() {
   const [subject, setSubject] = useState('');
   const [letterDate, setLetterDate] = useState(new Date().toISOString().split('T')[0]);
   const [receivedSentDate, setReceivedSentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
   const [status, setStatus] = useState('RECEIVED');
   const [tagInput, setTagInput] = useState('');
@@ -124,6 +125,9 @@ export default function EncodePage() {
       formData.append('receivedSentDate', receivedSentDate);
       formData.append('priority', priority);
       formData.append('status', status);
+      if (dueDate) {
+        formData.append('dueDate', dueDate);
+      }
       formData.append('tags', JSON.stringify(tags));
 
       if (selectedFile) {
@@ -323,7 +327,7 @@ export default function EncodePage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Letter Date
@@ -344,6 +348,20 @@ export default function EncodePage() {
                 type="date"
                 value={receivedSentDate}
                 onChange={(e) => setReceivedSentDate(e.target.value)}
+                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Target Due Date (SLA)
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                placeholder="Auto-set by Priority"
+                title="Leave empty to auto-set (+3d Urgent, +5d High, +7d Normal)"
                 className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
               />
             </div>

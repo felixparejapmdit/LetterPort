@@ -9,6 +9,7 @@ export interface Letter {
   recipient: string;
   subject: string;
   letterDate: string;
+  dueDate?: string;
   receivedSentDate: string;
   status: 'DRAFT' | 'RECEIVED' | 'UNDER_REVIEW' | 'PROCESSED' | 'ARCHIVED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -63,6 +64,7 @@ export interface DashboardStats {
   outgoingLetters: number;
   pendingOCR: number;
   urgentLetters: number;
+  overdueLetters: number;
   recentActivity: Array<{
     id: string;
     action: string;
@@ -236,4 +238,119 @@ export async function restoreBackup(backupData: any): Promise<{ restored: number
   }
   const json = await res.json();
   return { restored: json.data?.restored || 0, message: json.message };
+}
+
+// User Profile & Authentication
+export interface UserProfile {
+  id: string;
+  username: string;
+  role: 'admin' | 'user';
+  password?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function loginUser(credentials: { username: string; password: string }): Promise<{ token: string; user: UserProfile }> {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Invalid username or password');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchCurrentUser(token?: string): Promise<UserProfile> {
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/auth/me`, { headers, cache: 'no-store' });
+  if (!res.ok) throw new Error('Unauthenticated');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchUsers(token?: string): Promise<UserProfile[]> {
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/users`, { headers, cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch users');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function createUser(data: { username: string; password: string; role: 'admin' | 'user' }, token?: string): Promise<UserProfile> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/users`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to create user');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export async function updateUser(id: string, data: { username?: string; password?: string; role?: 'admin' | 'user' }, token?: string): Promise<UserProfile> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/users/${id}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update user');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export async function deleteUser(id: string, token?: string): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/users/${id}`, {
+    method: 'DELETE',
+    headers,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete user');
+  }
+}
+
+// Reference Number Format
+export interface ReferenceFormatConfig {
+  prefix: string;
+  separator: string;
+  digits: number;
+}
+
+export async function fetchReferenceFormat(): Promise<ReferenceFormatConfig> {
+  const res = await fetch(`${API_BASE}/settings/reference-format`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch reference format');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function updateReferenceFormat(format: ReferenceFormatConfig): Promise<ReferenceFormatConfig> {
+  const res = await fetch(`${API_BASE}/settings/reference-format`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(format),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update reference format');
+  }
+  const json = await res.json();
+  return json.data;
 }

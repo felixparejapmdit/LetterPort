@@ -63,6 +63,25 @@ export class SettingsService {
     };
   }
 
+  public async getReferenceFormat(): Promise<{ prefix: string; separator: string; digits: number }> {
+    const prefix = this.repository.getConfig ? await this.repository.getConfig('reference_prefix', 'LP') : 'LP';
+    const separator = this.repository.getConfig ? await this.repository.getConfig('reference_separator', '-') : '-';
+    const digitsStr = this.repository.getConfig ? await this.repository.getConfig('reference_digits', '4') : '4';
+    return {
+      prefix,
+      separator,
+      digits: parseInt(digitsStr, 10) || 4
+    };
+  }
+
+  public async updateReferenceFormat(prefix: string, separator: string, digits: number): Promise<void> {
+    if (this.repository.setConfig) {
+      await this.repository.setConfig('reference_prefix', (prefix || 'LP').trim().toUpperCase());
+      await this.repository.setConfig('reference_separator', separator || '-');
+      await this.repository.setConfig('reference_digits', String(digits || 4));
+    }
+  }
+
   public async loadSampleData(): Promise<{ count: number }> {
     const samples = [
       {

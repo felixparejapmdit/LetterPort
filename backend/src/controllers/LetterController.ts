@@ -23,6 +23,7 @@ export class LetterController {
         receivedSentDate,
         status,
         priority,
+        dueDate,
         tags
       } = req.body;
 
@@ -62,6 +63,7 @@ export class LetterController {
         receivedSentDate: receivedSentDate || new Date().toISOString().split('T')[0],
         status: status as LetterStatus,
         priority: priority as LetterPriority,
+        dueDate,
         tags: parsedTags,
         file
       });
@@ -163,7 +165,7 @@ export class LetterController {
   public updateLetter = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const { type, sender, recipient, subject, letterDate, receivedSentDate, vemNumber, status, priority, tags } = req.body;
+      const { type, sender, recipient, subject, letterDate, receivedSentDate, vemNumber, status, priority, dueDate, tags } = req.body;
 
       const updated = await this.letterService.updateLetter(id, {
         type: type as LetterType,
@@ -175,6 +177,7 @@ export class LetterController {
         vemNumber,
         status: status as LetterStatus,
         priority: priority as LetterPriority,
+        dueDate,
         tags
       });
 

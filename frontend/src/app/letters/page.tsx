@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { fetchLetters, getDownloadUrl, Letter } from '@/lib/api';
-import { StatusBadge, PriorityBadge, TypeBadge } from '@/components/StatusBadge';
+import { StatusBadge, PriorityBadge, TypeBadge, PriorityIcon } from '@/components/StatusBadge';
 import EditLetterModal from '@/components/EditLetterModal';
 import { 
   FileText, 
@@ -19,6 +19,7 @@ import {
   Pencil,
   Download,
   AlertTriangle,
+  AlertCircle,
   Activity,
   X
 } from 'lucide-react';
@@ -35,6 +36,7 @@ function LettersContent() {
   const [priorityFilter, setPriorityFilter] = useState(searchParams.get('priority') || '');
   const [ocrStatusFilter, setOcrStatusFilter] = useState(searchParams.get('ocrStatus') || '');
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [overdueFilter, setOverdueFilter] = useState(searchParams.get('overdue') === 'true');
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -51,6 +53,7 @@ function LettersContent() {
     setPriorityFilter(searchParams.get('priority') || '');
     setOcrStatusFilter(searchParams.get('ocrStatus') || '');
     setSearchTerm(searchParams.get('search') || '');
+    setOverdueFilter(searchParams.get('overdue') === 'true');
     setPage(1);
   }, [searchParams]);
 
@@ -92,10 +95,15 @@ function LettersContent() {
     setPriorityFilter('');
     setOcrStatusFilter('');
     setSearchTerm('');
+    setOverdueFilter(false);
     setPage(1);
   };
 
-  const hasActiveFilters = Boolean(typeFilter || statusFilter || priorityFilter || ocrStatusFilter || searchTerm);
+  const hasActiveFilters = Boolean(typeFilter || statusFilter || priorityFilter || ocrStatusFilter || searchTerm || overdueFilter);
+
+  const displayedLetters = overdueFilter
+    ? letters.filter((l) => l.dueDate && new Date().toISOString().split('T')[0] > l.dueDate && l.status !== 'PROCESSED' && l.status !== 'ARCHIVED')
+    : letters;
 
   return (
     <div className="space-y-6">
@@ -192,6 +200,23 @@ function LettersContent() {
             </select>
           </div>
 
+          {/* Overdue Quick Filter Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setOverdueFilter(!overdueFilter);
+              setPage(1);
+            }}
+            className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+              overdueFilter
+                ? 'bg-red-500 text-white border-red-600 shadow-xs'
+                : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>Overdue Only</span>
+          </button>
+
           {/* Active OCR Reading Tag if present */}
           {ocrStatusFilter && (
             <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 text-xs font-semibold">
@@ -230,7 +255,7 @@ function LettersContent() {
             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-500" />
             <p className="text-sm">Loading letters...</p>
           </div>
-        ) : letters.length === 0 ? (
+        ) : displayedLetters.length === 0 ? (
           <div className="p-12 text-center text-slate-400 dark:text-slate-500">
             <FileText className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
             <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200">No matching letters</h3>
@@ -255,109 +280,112 @@ function LettersContent() {
                   <th className="px-4 py-3.5">VEM No</th>
                   <th className="px-4 py-3.5">Type</th>
                   <th className="px-4 sm:px-6 py-3.5">Subject</th>
-                  <th className="px-4 py-3.5">Priority</th>
+                  <th className="px-4 py-3.5">Status</th>
                   <th className="px-4 py-3.5 hidden md:table-cell">From</th>
                   <th className="px-4 py-3.5 hidden lg:table-cell">To</th>
-                  <th className="px-4 py-3.5 hidden sm:table-cell">Date</th>
-                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 hidden sm:table-cell">Date & SLA</th>
                   <th className="px-4 sm:px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                {letters.map((l) => (
-                  <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
-                    <td className="px-4 sm:px-6 py-4 font-mono font-semibold text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                      <Link href={`/letters/${l.id}`} className="hover:underline flex items-center gap-1.5" title="Track & View Letter">
-                        {l.priority === 'URGENT' && (
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                {displayedLetters.map((l) => {
+                  const isOverdue = l.dueDate && new Date().toISOString().split('T')[0] > l.dueDate && l.status !== 'PROCESSED' && l.status !== 'ARCHIVED';
+                  return (
+                    <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
+                      <td className="px-4 sm:px-6 py-4 font-mono font-semibold text-xs whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <PriorityIcon priority={l.priority} />
+                          <Link href={`/letters/${l.id}`} className="text-blue-600 dark:text-blue-400 hover:underline" title="View details">
+                            {l.referenceNumber}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {l.vemNumber ? (
+                          <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/60 inline-flex items-center gap-1">
+                            <Hash className="w-3 h-3 text-emerald-500" />
+                            {l.vemNumber}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">-</span>
                         )}
-                        <span>{l.referenceNumber}</span>
-                      </Link>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {l.vemNumber ? (
-                        <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/60 inline-flex items-center gap-1">
-                          <Hash className="w-3 h-3 text-emerald-500" />
-                          {l.vemNumber}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <TypeBadge type={l.type} />
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate" title={l.subject}>
-                      {l.subject}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {l.priority === 'URGENT' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 animate-pulse">
-                          <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
-                          Urgent
-                        </span>
-                      ) : (
-                        <PriorityBadge priority={l.priority} />
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden md:table-cell">
-                      {l.sender}
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden lg:table-cell">
-                      {l.recipient}
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:table-cell">
-                      {l.letterDate}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <StatusBadge status={l.status} />
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center space-x-1.5">
-                        {/* Track Letter Status */}
-                        <button
-                          onClick={() => setTrackingLetter(l)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white transition shadow-2xs"
-                          title={`Track status for ${l.referenceNumber}`}
-                          aria-label={`Track status for ${l.referenceNumber}`}
-                        >
-                          <Activity className="w-3.5 h-3.5" />
-                        </button>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <TypeBadge type={l.type} />
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate" title={l.subject}>
+                        {l.subject}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <StatusBadge status={l.status} />
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden md:table-cell">
+                        {l.sender}
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden lg:table-cell">
+                        {l.recipient}
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:table-cell">
+                        <div>{l.letterDate}</div>
+                        {l.dueDate && (
+                          <div className="flex items-center gap-1 text-[11px] mt-0.5">
+                            <span className="text-slate-400">Due:</span>
+                            <span className={isOverdue ? 'font-bold text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}>{l.dueDate}</span>
+                            {isOverdue && (
+                              <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 uppercase">
+                                Overdue
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center space-x-1.5">
+                          {/* Track Letter Status */}
+                          <button
+                            onClick={() => setTrackingLetter(l)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white transition shadow-2xs"
+                            title={`Track status for ${l.referenceNumber}`}
+                            aria-label={`Track status for ${l.referenceNumber}`}
+                          >
+                            <Activity className="w-3.5 h-3.5" />
+                          </button>
 
-                        {/* Download File */}
-                        <a
-                          href={getDownloadUrl(l.id)}
-                          download
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white transition shadow-2xs"
-                          title="Download document"
-                          aria-label={`Download document for ${l.referenceNumber}`}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </a>
+                          {/* Download File */}
+                          <a
+                            href={getDownloadUrl(l.id)}
+                            download
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white transition shadow-2xs"
+                            title="Download document"
+                            aria-label={`Download document for ${l.referenceNumber}`}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
 
-                        {/* Edit */}
-                        <button
-                          onClick={() => setEditingLetter(l)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition shadow-2xs"
-                          title={`Edit letter ${l.referenceNumber}`}
-                          aria-label={`Edit letter ${l.referenceNumber}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
+                          {/* Edit */}
+                          <button
+                            onClick={() => setEditingLetter(l)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition shadow-2xs"
+                            title={`Edit letter ${l.referenceNumber}`}
+                            aria-label={`Edit letter ${l.referenceNumber}`}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
 
-                        {/* View Details */}
-                        <Link
-                          href={`/letters/${l.id}`}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition shadow-2xs"
-                          title={`View details for ${l.referenceNumber}`}
-                          aria-label={`View details for ${l.referenceNumber}`}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {/* View Details */}
+                          <Link
+                            href={`/letters/${l.id}`}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition shadow-2xs"
+                            title={`View details for ${l.referenceNumber}`}
+                            aria-label={`View details for ${l.referenceNumber}`}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

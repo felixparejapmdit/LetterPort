@@ -33,6 +33,7 @@ export interface DashboardStats {
   outgoingLetters: number;
   pendingOCR: number;
   urgentLetters: number;
+  overdueLetters?: number;
   recentActivity: Array<{
     id: string;
     action: string;
@@ -64,4 +65,15 @@ export interface ILetterRepository {
   searchLetters(query: string, limit?: number): Promise<SearchResult[]>;
   getStats(): Promise<DashboardStats>;
   generateNextReferenceNumber(type: LetterType): Promise<string>;
+
+  // User Management & System Configuration
+  getUserByUsername?(username: string): Promise<any | null>;
+  getUserById?(id: string): Promise<any | null>;
+  listUsers?(): Promise<any[]>;
+  saveUser?(user: any): Promise<void>;
+  updateUser?(user: any): Promise<void>;
+  deleteUser?(id: string): Promise<void>;
+
+  getConfig?(key: string, defaultValue?: string): Promise<string>;
+  setConfig?(key: string, value: string): Promise<void>;
 }

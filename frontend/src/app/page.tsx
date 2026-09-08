@@ -9,7 +9,7 @@ import {
   DashboardStats, 
   Letter 
 } from '@/lib/api';
-import { StatusBadge, PriorityBadge, TypeBadge } from '@/components/StatusBadge';
+import { StatusBadge, PriorityBadge, TypeBadge, PriorityIcon } from '@/components/StatusBadge';
 import EditLetterModal from '@/components/EditLetterModal';
 import TrackingModal from '@/components/TrackingModal';
 import { 
@@ -18,6 +18,7 @@ import {
   FileText, 
   Clock, 
   AlertTriangle, 
+  AlertCircle,
   PlusCircle, 
   Search, 
   ArrowRight,
@@ -47,6 +48,7 @@ export default function DashboardPage() {
           outgoingLetters: 0,
           pendingOCR: 0,
           urgentLetters: 0,
+          overdueLetters: 0,
           recentActivity: []
         })),
         fetchLetters({ limit: 8 }).catch(() => ({ letters: [], pagination: { total: 0, totalPages: 0, page: 1 } })),
@@ -102,8 +104,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      {/* Metric Cards Grid - 6 columns */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {/* Total */}
         <Link 
           href="/letters"
@@ -158,6 +160,42 @@ export default function DashboardPage() {
           <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Sent letters &rarr;</span>
         </Link>
 
+        {/* Urgent */}
+        <Link 
+          href="/letters?priority=URGENT"
+          className="group glass-card p-4 sm:p-5 rounded-2xl hover:border-rose-500/50 hover:shadow-md transition-all block cursor-pointer"
+          title="View urgent letters"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Urgent</span>
+            <div className="p-2 bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-xl group-hover:scale-110 transition-transform">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-extrabold text-rose-900 dark:text-rose-300 mt-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+            {loading ? '-' : stats?.urgentLetters ?? 0}
+          </p>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Urgent attention &rarr;</span>
+        </Link>
+
+        {/* Overdue (SLA Alert) */}
+        <Link 
+          href="/letters?overdue=true"
+          className="group glass-card p-4 sm:p-5 rounded-2xl hover:border-red-500/50 hover:shadow-md transition-all block cursor-pointer bg-red-50/20 dark:bg-red-950/10"
+          title="View overdue letters"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Overdue</span>
+            <div className="p-2 bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 rounded-xl group-hover:scale-110 transition-transform">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400 mt-3 group-hover:text-red-700 transition-colors">
+            {loading ? '-' : stats?.overdueLetters ?? 0}
+          </p>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Past SLA deadline &rarr;</span>
+        </Link>
+
         {/* Reading (OCR Scanning) */}
         <Link 
           href="/letters?ocrStatus=PENDING"
@@ -174,24 +212,6 @@ export default function DashboardPage() {
             {loading ? '-' : stats?.pendingOCR ?? 0}
           </p>
           <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Scanning text &rarr;</span>
-        </Link>
-
-        {/* Urgent */}
-        <Link 
-          href="/letters?priority=URGENT"
-          className="group glass-card p-4 sm:p-5 rounded-2xl col-span-2 sm:col-span-1 hover:border-rose-500/50 hover:shadow-md transition-all block cursor-pointer"
-          title="View urgent letters"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Urgent</span>
-            <div className="p-2 bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-xl group-hover:scale-110 transition-transform">
-              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-          </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-rose-900 dark:text-rose-300 mt-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
-            {loading ? '-' : stats?.urgentLetters ?? 0}
-          </p>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Urgent attention &rarr;</span>
         </Link>
       </div>
 
@@ -308,61 +328,63 @@ export default function DashboardPage() {
                   <th className="px-4 py-3.5">VEM No</th>
                   <th className="px-4 py-3.5">Type</th>
                   <th className="px-4 sm:px-6 py-3.5">Subject</th>
-                  <th className="px-4 py-3.5">Priority</th>
-                  <th className="px-4 py-3.5 hidden md:table-cell">From / To</th>
-                  <th className="px-4 py-3.5 hidden sm:table-cell">Date</th>
                   <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 hidden md:table-cell">From / To</th>
+                  <th className="px-4 py-3.5 hidden sm:table-cell">Date & SLA</th>
                   <th className="px-4 sm:px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                {recentLetters.map((l) => (
-                  <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
-                    <td className="px-4 sm:px-6 py-4 font-mono font-semibold text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                      <Link href={`/letters/${l.id}`} className="hover:underline flex items-center gap-1.5" title="Track & View Letter">
-                        {l.priority === 'URGENT' && (
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                {recentLetters.map((l) => {
+                  const isOverdue = l.dueDate && new Date().toISOString().split('T')[0] > l.dueDate && l.status !== 'PROCESSED' && l.status !== 'ARCHIVED';
+                  return (
+                    <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
+                      <td className="px-4 sm:px-6 py-4 font-mono font-semibold text-xs whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <PriorityIcon priority={l.priority} />
+                          <Link href={`/letters/${l.id}`} className="text-blue-600 dark:text-blue-400 hover:underline" title="View details">
+                            {l.referenceNumber}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {l.vemNumber ? (
+                          <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/60 inline-flex items-center gap-1">
+                            <Hash className="w-3 h-3 text-emerald-500" />
+                            {l.vemNumber}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">-</span>
                         )}
-                        <span>{l.referenceNumber}</span>
-                      </Link>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {l.vemNumber ? (
-                        <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/60 inline-flex items-center gap-1">
-                          <Hash className="w-3 h-3 text-emerald-500" />
-                          {l.vemNumber}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <TypeBadge type={l.type} />
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate" title={l.subject}>
-                      {l.subject}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {l.priority === 'URGENT' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 animate-pulse">
-                          <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
-                          Urgent
-                        </span>
-                      ) : (
-                        <PriorityBadge priority={l.priority} />
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden md:table-cell">
-                      <div><strong className="text-slate-700 dark:text-slate-300 font-medium">From:</strong> {l.sender}</div>
-                      <div><strong className="text-slate-700 dark:text-slate-300 font-medium">To:</strong> {l.recipient}</div>
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:table-cell">
-                      {l.letterDate}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <StatusBadge status={l.status} />
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <TypeBadge type={l.type} />
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate" title={l.subject}>
+                        {l.subject}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <StatusBadge status={l.status} />
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden md:table-cell">
+                        <div><strong className="text-slate-700 dark:text-slate-300 font-medium">From:</strong> {l.sender}</div>
+                        <div><strong className="text-slate-700 dark:text-slate-300 font-medium">To:</strong> {l.recipient}</div>
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:table-cell">
+                        <div>{l.letterDate}</div>
+                        {l.dueDate && (
+                          <div className="flex items-center gap-1 text-[11px] mt-0.5">
+                            <span className="text-slate-400">Due:</span>
+                            <span className={isOverdue ? 'font-bold text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}>{l.dueDate}</span>
+                            {isOverdue && (
+                              <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 uppercase">
+                                Overdue
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                       <div className="inline-flex items-center space-x-1.5">
                         {/* Track Letter Status */}
                         <button
@@ -407,7 +429,8 @@ export default function DashboardPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

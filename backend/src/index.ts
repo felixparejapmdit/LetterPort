@@ -16,6 +16,8 @@ import { LetterController } from './controllers/LetterController';
 import { SearchController } from './controllers/SearchController';
 import { StatsController } from './controllers/StatsController';
 import { SettingsController } from './controllers/SettingsController';
+import { AuthController } from './controllers/AuthController';
+import { UserController } from './controllers/UserController';
 import { createLetterRoutes } from './routes/letterRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -83,6 +85,8 @@ async function bootstrap() {
   const searchController = new SearchController(letterService);
   const statsController = new StatsController(letterService);
   const settingsController = new SettingsController(settingsService);
+  const authController = new AuthController(repository);
+  const userController = new UserController(repository);
 
   // 3. Express Middleware
   app.use(cors({
@@ -103,7 +107,14 @@ async function bootstrap() {
   });
 
   // 4. Register Routes
-  const router = createLetterRoutes(letterController, searchController, statsController, settingsController);
+  const router = createLetterRoutes(
+    letterController, 
+    searchController, 
+    statsController, 
+    settingsController,
+    authController,
+    userController
+  );
   app.use('/api', router);
 
   // 5. Centralized Error Handler

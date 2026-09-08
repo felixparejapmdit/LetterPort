@@ -1,9 +1,11 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { Letter, LetterPriority, LetterStatus, LetterType } from '../entities/Letter';
 import { Attachment } from '../entities/Attachment';
 import { OCRRecord, OCRStatus } from '../entities/OCRRecord';
+import { User, UserRole } from '../entities/User';
 import { ILetterRepository, LetterFilter, SearchResult, DashboardStats } from './ILetterRepository';
 
 export class SqliteLetterRepository implements ILetterRepository {
@@ -50,10 +52,47 @@ export class SqliteLetterRepository implements ILetterRepository {
       )
     `);
 
-    // Safe migration: Add vem_number column if not existing in older databases
+    // Safe migration: Add vem_number and due_date columns if not existing in older databases
     try {
       await this.run(`ALTER TABLE letters ADD COLUMN vem_number TEXT`);
     } catch {}
+    try {
+      await this.run(`ALTER TABLE letters ADD COLUMN due_date TEXT`);
+    } catch {}
+
+    // Users table for Admin and Staff Authentication
+    await this.run(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // System configuration table for custom formats
+    await this.run(`
+      CREATE TABLE IF NOT EXISTS system_config (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+
+    // Seed default admin and user accounts if users table is empty
+    const userCount = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM users`);
+    if (!userCount || userCount.count === 0) {
+      const now = new Date().toISOString();
+      await this.run(
+        `INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), 'admin', 'password', 'admin', now, now]
+      );
+      await this.run(
+        `INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), 'user', 'password', 'user', now, now]
+      );
+    }
 
     await this.run(`
       CREATE TABLE IF NOT EXISTS attachments (
@@ -141,6 +180,7 @@ export class SqliteLetterRepository implements ILetterRepository {
       receivedSentDate: row.received_sent_date,
       status: row.status as LetterStatus,
       priority: row.priority as LetterPriority,
+      dueDate: row.due_date || '',
       tags: tags,
       createdAt: row.created_at,
       updatedAt: row.updated_at
@@ -177,8 +217,8 @@ export class SqliteLetterRepository implements ILetterRepository {
 
   public async saveLetter(letter: Letter): Promise<void> {
     await this.run(
-      `INSERT INTO letters (id, reference_number, vem_number, type, sender, recipient, subject, letter_date, received_sent_date, status, priority, tags, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO letters (id, reference_number, vem_number, type, sender, recipient, subject, letter_date, received_sent_date, status, priority, due_date, tags, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         letter.id,
         letter.referenceNumber,
@@ -191,6 +231,7 @@ export class SqliteLetterRepository implements ILetterRepository {
         letter.receivedSentDate,
         letter.status,
         letter.priority,
+        letter.dueDate,
         JSON.stringify(letter.tags),
         letter.createdAt,
         letter.updatedAt
@@ -294,6 +335,7 @@ export class SqliteLetterRepository implements ILetterRepository {
         received_sent_date = ?,
         status = ?,
         priority = ?,
+        due_date = ?,
         tags = ?,
         updated_at = ?
       WHERE id = ?`,
@@ -308,6 +350,7 @@ export class SqliteLetterRepository implements ILetterRepository {
         letter.receivedSentDate,
         letter.status,
         letter.priority,
+        letter.dueDate,
         JSON.stringify(letter.tags),
         letter.updatedAt,
         letter.id
@@ -535,6 +578,13 @@ export class SqliteLetterRepository implements ILetterRepository {
     const outRow = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM letters WHERE type = 'OUTGOING'`);
     const pendingOcrRow = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM ocr_records WHERE status IN ('PENDING', 'PROCESSING')`);
     const urgentRow = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM letters WHERE priority = 'URGENT'`);
+    const overdueRow = await this.get<{ count: number }>(`
+      SELECT COUNT(*) as count FROM letters 
+      WHERE status NOT IN ('PROCESSED', 'ARCHIVED') 
+        AND due_date IS NOT NULL 
+        AND due_date != '' 
+        AND due_date < date('now')
+    `);
 
     const recentRows = await this.all<any>(`
       SELECT id, reference_number, subject, created_at, type 
@@ -549,6 +599,7 @@ export class SqliteLetterRepository implements ILetterRepository {
       outgoingLetters: outRow?.count || 0,
       pendingOCR: pendingOcrRow?.count || 0,
       urgentLetters: urgentRow?.count || 0,
+      overdueLetters: overdueRow?.count || 0,
       recentActivity: recentRows.map(r => ({
         id: r.id,
         action: `Created ${r.type.toLowerCase()} letter`,
@@ -561,8 +612,17 @@ export class SqliteLetterRepository implements ILetterRepository {
 
   public async generateNextReferenceNumber(type: LetterType): Promise<string> {
     const year = new Date().getFullYear();
-    const prefix = type === 'INCOMING' ? 'LP-IN' : 'LP-OUT';
-    const pattern = `${prefix}-${year}-%`;
+    const typeCode = type === 'INCOMING' ? 'IN' : 'OUT';
+    
+    // Read configured pattern or defaults
+    const customPrefix = await this.getConfig('reference_prefix', 'LP');
+    const customSep = await this.getConfig('reference_separator', '-');
+    const digitsStr = await this.getConfig('reference_digits', '4');
+    const digits = Math.max(3, Math.min(6, parseInt(digitsStr, 10) || 4));
+
+    // Prefix base for querying: e.g. "LP-IN-2026-"
+    const prefixBase = `${customPrefix}${customSep}${typeCode}${customSep}${year}${customSep}`;
+    const pattern = `${prefixBase}%`;
 
     const row = await this.get<{ max_ref: string }>(
       `SELECT reference_number as max_ref FROM letters WHERE reference_number LIKE ? ORDER BY reference_number DESC LIMIT 1`,
@@ -571,14 +631,84 @@ export class SqliteLetterRepository implements ILetterRepository {
 
     let nextSeq = 1;
     if (row && row.max_ref) {
-      const parts = row.max_ref.split('-');
+      const parts = row.max_ref.split(customSep);
       const lastSeq = parseInt(parts[parts.length - 1], 10);
       if (!isNaN(lastSeq)) {
         nextSeq = lastSeq + 1;
       }
     }
 
-    const padded = String(nextSeq).padStart(4, '0');
-    return `${prefix}-${year}-${padded}`;
+    const padded = String(nextSeq).padStart(digits, '0');
+    return `${prefixBase}${padded}`;
+  }
+
+  // User Management
+  public async getUserByUsername(username: string): Promise<User | null> {
+    const row = await this.get<any>(`SELECT * FROM users WHERE username = ?`, [username.trim().toLowerCase()]);
+    if (!row) return null;
+    return new User({
+      id: row.id,
+      username: row.username,
+      passwordHash: row.password_hash,
+      role: row.role as UserRole,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    });
+  }
+
+  public async getUserById(id: string): Promise<User | null> {
+    const row = await this.get<any>(`SELECT * FROM users WHERE id = ?`, [id]);
+    if (!row) return null;
+    return new User({
+      id: row.id,
+      username: row.username,
+      passwordHash: row.password_hash,
+      role: row.role as UserRole,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    });
+  }
+
+  public async listUsers(): Promise<User[]> {
+    const rows = await this.all<any>(`SELECT * FROM users ORDER BY created_at ASC`);
+    return rows.map(r => new User({
+      id: r.id,
+      username: r.username,
+      passwordHash: r.password_hash,
+      role: r.role as UserRole,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    }));
+  }
+
+  public async saveUser(user: User): Promise<void> {
+    await this.run(
+      `INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      [user.id, user.username, user.passwordHash, user.role, user.createdAt, user.updatedAt]
+    );
+  }
+
+  public async updateUser(user: User): Promise<void> {
+    await this.run(
+      `UPDATE users SET username = ?, password_hash = ?, role = ?, updated_at = ? WHERE id = ?`,
+      [user.username, user.passwordHash, user.role, user.updatedAt, user.id]
+    );
+  }
+
+  public async deleteUser(id: string): Promise<void> {
+    await this.run(`DELETE FROM users WHERE id = ?`, [id]);
+  }
+
+  // System Configuration Key-Value Store
+  public async getConfig(key: string, defaultValue = ''): Promise<string> {
+    const row = await this.get<{ value: string }>(`SELECT value FROM system_config WHERE key = ?`, [key]);
+    return row ? row.value : defaultValue;
+  }
+
+  public async setConfig(key: string, value: string): Promise<void> {
+    await this.run(
+      `INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      [key, value]
+    );
   }
 }

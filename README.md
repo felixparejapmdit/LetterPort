@@ -14,6 +14,11 @@
 
 ## 🌟 Key Features
 
+- **🔐 Built-in Authentication & User Management**: Dedicated login with role-based access control. Preconfigured with `admin` / `password` (full system control & user management) and `user` / `password` (staff workflow: view, encode, track, download).
+- **🏷️ Printable Barcode / QR Code Stickers & Routing Slips**: Generate and print vector QR code labels for physical envelopes/folders or 1-page official transmittal/routing slips with checkpoint sign-offs.
+- **⏱️ Automated SLA & Overdue Tracking**: Auto-calculates target resolution dates based on priority (+3 days for Urgent, +5 days for High, +7 days for Normal) with live Overdue indicators and dashboard alert metrics.
+- **📂 Full-Height Right-Side Tracking Drawer**: Clicking any tracking icon slides open a smooth, full-height lateral drawer displaying the timeline stepper, OCR confidence, SLA countdown, and quick share URL.
+- **🔢 Customizable Reference Number Format**: Configure prefix (e.g. `LP`, `DOC`, `OFFICE`), separator (`-`, `/`, `.`), and digit sequence length in Settings with live preview.
 - **⚡ Live Search As-You-Type**: Instant debounced search querying across letter metadata, senders, recipients, and text extracted from scanned documents.
 - **⌨️ Global `Ctrl+K` / `Cmd+K` Command Modal**: Accessible on any page with keyboard arrow navigation and immediate document opening.
 - **🔢 VEM-Number Tracking**: Institutional tracking number assigned to correspondence alongside auto-generated reference codes (`LP-IN-YYYY-XXXX`).
@@ -21,7 +26,7 @@
 - **📱 Fully Mobile Responsive**: Engineered with a collapsible hamburger navigation drawer, responsive tables, and mobile-friendly document split views.
 - **🔍 Automated Background Text Reader (OCR)**: Scans PDF documents and images (JPG, PNG, TIFF) using background worker queues, transcribing text for instant full-text indexing with reading accuracy scoring.
 - **📂 In-Browser Document Viewer**: High-performance viewer supporting zoom, rotation, side-by-side text viewing, and downloads.
-- **💾 Dual Database Engine (PocketBase & SQLite)**: Supports **PocketBase** as the primary backend database with zero-setup automatic **SQLite** fallback. Also includes full PostgreSQL configuration for enterprise deployments.
+- **💾 Dual Database Engine (Postgres, PocketBase & SQLite)**: Enterprise-ready multi-database architecture with zero-setup automatic SQLite fallback.
 - **🗄️ Office Network Storage (NAS) Integration**: Settings interface to connect and automatically sync uploaded correspondence to Synology, QNAP, TrueNAS, or Windows network shares.
 - **🧪 Demo Sample Data**: One-click demo letter generator and cleanup tool to preview the system immediately.
 
@@ -29,20 +34,30 @@
 
 ## 📖 User Guide
 
-### 1. Dashboard Overview
-- Navigate to the **Dashboard** (`/`) to view live metric cards: **Total Letters**, **Incoming Letters**, **Outgoing Letters**, **Reading Text** (pending OCR), and **Urgent Items**.
-- Inspect recent correspondence in the table and click the **Eye icon** (`👁️`) to open any letter.
+### 0. User Login & Roles
+- Access LetterPort and log in via `/login`:
+  - **Administrator** (`admin` / `password`): Full system control, letter deletion, database management, and user creation/password resets.
+  - **Staff User** (`user` / `password`): Standard daily workflow (encode, search, track, sticker generator, PDF download).
+- One-click demo login buttons are provided on the login screen for immediate access.
 
-### 2. Adding a Letter
+### 1. Dashboard Overview
+- Navigate to the **Dashboard** (`/`) to view 6 live metric cards: **Total Letters**, **Incoming Letters**, **Outgoing Letters**, **Reading Text** (pending OCR), **Urgent Items**, and **Overdue Letters** (SLA breached).
+- The table displays priority icons directly beside the Reference Number (with flashing red badge for Urgent letters), followed by VEM number, Type, Subject, color-coded **Status** badge, From/To, and SLA Due Date.
+- Click the **Track icon** (`🧭`) on any row to open the full-height **Right-Side Tracking Drawer**.
+
+### 2. Adding a Letter & SLA Due Dates
 1. Click **Add Letter** in the top navigation or dashboard.
-2. Choose **Direction**:
-   - `Incoming`: Received from an external sender.
-   - `Outgoing`: Dispatched by your office.
+2. Choose **Direction**: `Incoming` or `Outgoing`.
 3. Fill in the **Sender**, **Recipient**, and **Subject**.
-4. The **Reference Number** is auto-generated. You can also assign or regenerate a custom **VEM-Number**.
-5. Set priority (`Low`, `Normal`, `High`, `Urgent`) and add optional category tags (`#tax`, `#invoice`, `#memo`).
-6. Attach a scan or PDF of the letter by clicking or dragging files into the upload box.
-7. Click **Save Letter & Read Text**. The system saves your letter and starts background OCR reading immediately.
+4. The **Reference Number** is auto-generated according to the pattern set in Settings.
+5. Set priority (`Low`, `Normal`, `High`, `Urgent`). The **Target Due Date (SLA)** automatically calculates (+3d for Urgent, +5d for High, +7d for Normal), or you can pick a specific date.
+6. Attach a scan or PDF of the letter.
+7. Click **Save Letter & Read Text**. The system saves the letter and starts background OCR reading immediately.
+
+### 3. QR Stickers & Official Routing Slips
+- On any letter detail page (`/letters/:id`), click **Sticker / Slip**:
+  - **Sticker Label**: Prints a high-contrast QR code label designed for physical envelope covers or manila folders. Anyone scanning the QR code with a smartphone camera is instantly taken to that letter's tracking page.
+  - **Routing / Transmittal Slip**: Generates an official 1-page transmittal document complete with routing stages, instructions, and signature sign-off boxes for physical routing.
 
 ### 3. Quick Global Search (`Ctrl+K`)
 - Press <kbd>Ctrl+K</kbd> (or <kbd>Cmd+K</kbd> on macOS) on any page to open the Quick Search modal.

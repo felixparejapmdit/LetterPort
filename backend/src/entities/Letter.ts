@@ -14,6 +14,7 @@ export interface LetterProps {
   receivedSentDate: string; // YYYY-MM-DD
   status?: LetterStatus;
   priority?: LetterPriority;
+  dueDate?: string; // YYYY-MM-DD
   tags?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -31,6 +32,7 @@ export class Letter {
   private _receivedSentDate: string;
   private _status: LetterStatus;
   private _priority: LetterPriority;
+  private _dueDate: string;
   private _tags: string[];
   private readonly _createdAt: string;
   private _updatedAt: string;
@@ -49,6 +51,7 @@ export class Letter {
     this._receivedSentDate = props.receivedSentDate;
     this._status = props.status || (props.type === 'INCOMING' ? 'RECEIVED' : 'DRAFT');
     this._priority = props.priority || 'MEDIUM';
+    this._dueDate = props.dueDate || '';
     this._tags = props.tags || [];
     this._createdAt = props.createdAt || new Date().toISOString();
     this._updatedAt = props.updatedAt || new Date().toISOString();
@@ -87,6 +90,7 @@ export class Letter {
   public get receivedSentDate(): string { return this._receivedSentDate; }
   public get status(): LetterStatus { return this._status; }
   public get priority(): LetterPriority { return this._priority; }
+  public get dueDate(): string { return this._dueDate; }
   public get tags(): string[] { return [...this._tags]; }
   public get createdAt(): string { return this._createdAt; }
   public get updatedAt(): string { return this._updatedAt; }
@@ -117,6 +121,7 @@ export class Letter {
     vemNumber?: string;
     status?: LetterStatus;
     priority?: LetterPriority;
+    dueDate?: string;
     tags?: string[];
   }): void {
     if (props.type) this._type = props.type;
@@ -128,6 +133,7 @@ export class Letter {
     if (props.vemNumber !== undefined) this._vemNumber = props.vemNumber.trim();
     if (props.status) this._status = props.status;
     if (props.priority) this._priority = props.priority;
+    if (props.dueDate !== undefined) this._dueDate = props.dueDate;
     if (props.tags) this._tags = [...props.tags];
     this._updatedAt = new Date().toISOString();
   }
@@ -172,6 +178,7 @@ export class Letter {
       receivedSentDate: this._receivedSentDate,
       status: this._status,
       priority: this._priority,
+      dueDate: this._dueDate,
       tags: this._tags,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt

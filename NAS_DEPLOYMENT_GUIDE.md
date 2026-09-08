@@ -49,6 +49,16 @@ The script will automatically:
 4. Build and boot all containers in detached mode.
 5. Display your local network URL (e.g. `http://192.168.1.150:8765`).
 
+### 🔐 Default Login Accounts
+When accessing LetterPort for the first time, use either of the built-in accounts:
+
+| Role | Username | Password | Permissions |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin` | `password` | **Full access**: Letter CRUD, system settings, user management, reference number configuration, database backup/restore. |
+| **Staff User** | `user` | `password` | **Standard access**: View, encode letters, track status, generate printable stickers & routing slips, download documents. (Restricted from deleting records or managing user accounts). |
+
+*(Passwords can be updated at any time in **Settings ➔ User Accounts**).*
+
 ---
 
 ## 🗄️ Deployment Method 2: Synology NAS (Container Manager GUI)

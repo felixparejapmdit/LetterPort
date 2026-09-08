@@ -37,6 +37,7 @@ export default function EditLetterModal({
     receivedSentDate: string;
     status: 'DRAFT' | 'RECEIVED' | 'UNDER_REVIEW' | 'PROCESSED' | 'ARCHIVED';
     priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+    dueDate: string;
     tags: string[];
   }>({
     type: 'INCOMING',
@@ -48,6 +49,7 @@ export default function EditLetterModal({
     receivedSentDate: '',
     status: 'RECEIVED',
     priority: 'MEDIUM',
+    dueDate: '',
     tags: []
   });
 
@@ -67,6 +69,7 @@ export default function EditLetterModal({
         receivedSentDate: letter.receivedSentDate ? letter.receivedSentDate.split('T')[0] : '',
         status: letter.status,
         priority: letter.priority,
+        dueDate: letter.dueDate ? letter.dueDate.split('T')[0] : '',
         tags: Array.isArray(letter.tags) ? [...letter.tags] : []
       });
       setError(null);
@@ -281,8 +284,8 @@ export default function EditLetterModal({
             </div>
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* Dates & SLA Due Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
                 Letter Date
@@ -300,7 +303,7 @@ export default function EditLetterModal({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                Date Received / Sent
+                Date Recv/Sent
               </label>
               <div className="relative">
                 <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -308,6 +311,22 @@ export default function EditLetterModal({
                   type="date"
                   value={formData.receivedSentDate}
                   onChange={(e) => setFormData({ ...formData, receivedSentDate: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                Target Due Date
+              </label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  placeholder="Target SLA date"
                   className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
               </div>

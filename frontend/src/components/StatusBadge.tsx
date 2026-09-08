@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertTriangle, AlertCircle, Clock, ArrowDown } from 'lucide-react';
 
 export function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, { bg: string; label: string }> = {
@@ -64,6 +65,35 @@ export function PriorityBadge({ priority }: { priority: string }) {
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${item.bg}`}>
       {item.label}
+    </span>
+  );
+}
+
+export function PriorityIcon({ priority }: { priority: string }) {
+  if (priority === 'URGENT') {
+    return (
+      <span title="Priority: Urgent" className="inline-flex items-center justify-center p-1 rounded-md bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 shrink-0 animate-pulse border border-rose-200 dark:border-rose-900">
+        <AlertTriangle className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
+  if (priority === 'HIGH') {
+    return (
+      <span title="Priority: High" className="inline-flex items-center justify-center p-1 rounded-md bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 shrink-0 border border-amber-200 dark:border-amber-900">
+        <AlertCircle className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
+  if (priority === 'MEDIUM') {
+    return (
+      <span title="Priority: Normal / Medium" className="inline-flex items-center justify-center p-1 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 shrink-0 border border-blue-200 dark:border-blue-900">
+        <Clock className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
+  return (
+    <span title="Priority: Low" className="inline-flex items-center justify-center p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 shrink-0 border border-slate-200 dark:border-slate-700">
+      <ArrowDown className="w-3.5 h-3.5" />
     </span>
   );
 }

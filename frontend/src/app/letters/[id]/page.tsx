@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   fetchLetter, 
@@ -16,7 +16,10 @@ import PDFViewer from '@/components/PDFViewer';
 import OCRTextViewer from '@/components/OCRTextViewer';
 import EditLetterModal from '@/components/EditLetterModal';
 import LetterTracker from '@/components/LetterTracker';
+import LetterStickerModal from '@/components/LetterStickerModal';
+import TrackingModal from '@/components/TrackingModal';
 import { StatusBadge, PriorityBadge, TypeBadge } from '@/components/StatusBadge';
+import { useAuth } from '@/context/AuthContext';
 import { 
   ArrowLeft, 
   Download, 
@@ -27,15 +30,21 @@ import {
   Clock, 
   Sparkles, 
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   FileText,
-  Pencil
+  Pencil,
+  QrCode,
+  Activity,
+  Printer
 } from 'lucide-react';
 
 export default function LetterDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
+  const { isAdmin } = useAuth();
 
   const [details, setDetails] = useState<LetterDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +53,8 @@ export default function LetterDetailPage() {
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isStickerOpen, setIsStickerOpen] = useState(false);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
   const loadLetter = async () => {
     try {
@@ -71,6 +82,12 @@ export default function LetterDetailPage() {
       return () => clearInterval(interval);
     }
   }, [details?.ocrRecord?.status]);
+
+  useEffect(() => {
+    if (searchParams?.get('track') === 'true') {
+      setIsTrackingOpen(true);
+    }
+  }, [searchParams]);
 
   const handleStatusChange = async (newStatus: any) => {
     if (!details) return;
@@ -137,6 +154,7 @@ export default function LetterDetailPage() {
 
   const { letter, attachments, ocrRecord } = details;
   const primaryAttachment = attachments[0];
+  const isOverdue = letter.dueDate && new Date().toISOString().split('T')[0] > letter.dueDate && letter.status !== 'PROCESSED' && letter.status !== 'ARCHIVED';
 
   return (
     <div className="space-y-6">
@@ -163,6 +181,12 @@ export default function LetterDetailPage() {
               )}
               <TypeBadge type={letter.type} />
               <PriorityBadge priority={letter.priority} />
+              {isOverdue && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900 animate-pulse">
+                  <AlertTriangle className="w-3 h-3" />
+                  Overdue
+                </span>
+              )}
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1 truncate max-w-2xl">
               {letter.subject}
@@ -171,7 +195,28 @@ export default function LetterDetailPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center space-x-2 self-start md:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+          {/* Tracking Drawer Button */}
+          <button
+            onClick={() => setIsTrackingOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-semibold shadow-2xs transition"
+            title="Open tracking drawer"
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>Track</span>
+          </button>
+
+          {/* QR Sticker / Routing Slip Button */}
+          <button
+            onClick={() => setIsStickerOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold shadow-2xs transition border border-slate-200 dark:border-slate-700"
+            title="Print QR code folder sticker or routing slip"
+          >
+            <QrCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Sticker / Slip</span>
+          </button>
+
+          {/* Edit Letter */}
           <button
             onClick={() => setIsEditOpen(true)}
             className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition transform active:scale-95"
@@ -188,34 +233,37 @@ export default function LetterDetailPage() {
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold shadow-sm transition"
             >
               <Download className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Download File</span>
+              <span>Download</span>
             </a>
           )}
 
-          {deleteConfirm ? (
-            <div className="flex items-center space-x-1.5 bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-900 p-1 rounded-xl">
-              <span className="text-xs text-rose-700 dark:text-rose-300 font-semibold px-2">Delete this letter?</span>
+          {/* Delete Action - Admin Only */}
+          {isAdmin && (
+            deleteConfirm ? (
+              <div className="flex items-center space-x-1.5 bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-900 p-1 rounded-xl">
+                <span className="text-xs text-rose-700 dark:text-rose-300 font-semibold px-2">Delete?</span>
+                <button
+                  onClick={handleDelete}
+                  className="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs font-bold hover:bg-rose-700 transition"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm(false)}
+                  className="px-2 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-xs hover:bg-slate-300 dark:hover:bg-slate-700 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={handleDelete}
-                className="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs font-bold hover:bg-rose-700 transition"
+                onClick={() => setDeleteConfirm(true)}
+                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 border border-transparent hover:border-rose-200 dark:hover:border-rose-900 transition"
+                title="Delete letter (Administrator only)"
               >
-                Yes, Delete
+                <Trash2 className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => setDeleteConfirm(false)}
-                className="px-2 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-xs hover:bg-slate-300 dark:hover:bg-slate-700 transition"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setDeleteConfirm(true)}
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 border border-transparent hover:border-rose-200 dark:hover:border-rose-900 transition"
-              title="Delete letter"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            )
           )}
         </div>
       </div>
@@ -302,7 +350,7 @@ export default function LetterDetailPage() {
                 <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{letter.recipient}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
                 <div>
                   <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Letter Date:</span>
                   <span className="font-medium text-slate-700 dark:text-slate-300">{letter.letterDate}</span>
@@ -313,6 +361,14 @@ export default function LetterDetailPage() {
                   </span>
                   <span className="font-medium text-slate-700 dark:text-slate-300">{letter.receivedSentDate}</span>
                 </div>
+                {letter.dueDate && (
+                  <div>
+                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Target Due Date:</span>
+                    <span className={`font-semibold ${isOverdue ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                      {letter.dueDate}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {letter.tags && letter.tags.length > 0 && (
@@ -353,6 +409,20 @@ export default function LetterDetailPage() {
           setDetails((prev) => (prev ? { ...prev, letter: updated } : null));
           await loadLetter();
         }}
+      />
+
+      {/* QR Sticker & Routing Slip Modal */}
+      <LetterStickerModal
+        isOpen={isStickerOpen}
+        letter={letter}
+        onClose={() => setIsStickerOpen(false)}
+      />
+
+      {/* Right Drawer Tracking Modal */}
+      <TrackingModal
+        isOpen={isTrackingOpen}
+        letter={letter}
+        onClose={() => setIsTrackingOpen(false)}
       />
     </div>
   );

@@ -3,15 +3,29 @@ import { LetterController } from '../controllers/LetterController';
 import { SearchController } from '../controllers/SearchController';
 import { StatsController } from '../controllers/StatsController';
 import { SettingsController } from '../controllers/SettingsController';
+import { AuthController } from '../controllers/AuthController';
+import { UserController } from '../controllers/UserController';
 import { uploadMiddleware } from '../middleware/upload';
 
 export function createLetterRoutes(
   letterController: LetterController,
   searchController: SearchController,
   statsController: StatsController,
-  settingsController: SettingsController
+  settingsController: SettingsController,
+  authController: AuthController,
+  userController: UserController
 ): Router {
   const router = Router();
+
+  // Authentication Endpoints
+  router.post('/auth/login', authController.login);
+  router.get('/auth/me', authController.getMe);
+
+  // User Management Endpoints (Admin)
+  router.get('/users', userController.listUsers);
+  router.post('/users', userController.createUser);
+  router.put('/users/:id', userController.updateUser);
+  router.delete('/users/:id', userController.deleteUser);
 
   // Dashboard Statistics
   router.get('/stats', statsController.getStats);
@@ -23,6 +37,8 @@ export function createLetterRoutes(
   router.post('/settings/sample-data/clear', settingsController.clearSampleData);
   router.get('/settings/backup', settingsController.exportBackup);
   router.post('/settings/restore', settingsController.restoreBackup);
+  router.get('/settings/reference-format', settingsController.getReferenceFormat);
+  router.put('/settings/reference-format', settingsController.updateReferenceFormat);
 
   // Full-Text Search
   router.get('/search', searchController.search);

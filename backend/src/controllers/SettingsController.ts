@@ -91,4 +91,30 @@ export class SettingsController {
       next(err);
     }
   };
+
+  public getReferenceFormat = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const format = await this.settingsService.getReferenceFormat();
+      res.status(200).json({
+        success: true,
+        data: format
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public updateReferenceFormat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { prefix, separator, digits } = req.body;
+      await this.settingsService.updateReferenceFormat(prefix, separator, digits);
+      res.status(200).json({
+        success: true,
+        message: 'Reference number format updated successfully',
+        data: { prefix, separator, digits }
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

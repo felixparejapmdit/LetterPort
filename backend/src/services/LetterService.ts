@@ -18,6 +18,7 @@ export interface CreateLetterDTO {
   receivedSentDate: string;
   status?: LetterStatus;
   priority?: LetterPriority;
+  dueDate?: string;
   tags?: string[];
   file?: {
     tempFilePath: string;
@@ -37,6 +38,7 @@ export interface UpdateLetterDTO {
   vemNumber?: string;
   status?: LetterStatus;
   priority?: LetterPriority;
+  dueDate?: string;
   tags?: string[];
 }
 
@@ -74,6 +76,15 @@ export class LetterService {
       referenceNumber = await this.repository.generateNextReferenceNumber(dto.type);
     }
 
+    let dueDate = dto.dueDate?.trim();
+    if (!dueDate) {
+      const baseDate = new Date(dto.letterDate || new Date());
+      const priority = dto.priority || 'MEDIUM';
+      const daysToAdd = priority === 'URGENT' ? 3 : priority === 'HIGH' ? 5 : 7;
+      baseDate.setDate(baseDate.getDate() + daysToAdd);
+      dueDate = baseDate.toISOString().split('T')[0];
+    }
+
     const letter = new Letter({
       id: letterId,
       referenceNumber,
@@ -86,6 +97,7 @@ export class LetterService {
       receivedSentDate: dto.receivedSentDate || new Date().toISOString().split('T')[0],
       status: dto.status,
       priority: dto.priority,
+      dueDate,
       tags: dto.tags || []
     });
 

@@ -28,9 +28,12 @@ export interface CreateLetterDTO {
 }
 
 export interface UpdateLetterDTO {
+  type?: LetterType;
   sender?: string;
   recipient?: string;
   subject?: string;
+  letterDate?: string;
+  receivedSentDate?: string;
   vemNumber?: string;
   status?: LetterStatus;
   priority?: LetterPriority;
@@ -190,22 +193,7 @@ export class LetterService {
     const letter = await this.repository.getLetterById(id);
     if (!letter) return null;
 
-    if (updates.sender && updates.recipient && updates.subject) {
-      letter.updateMetadata(updates.sender, updates.recipient, updates.subject, updates.vemNumber);
-    } else if (updates.vemNumber !== undefined) {
-      letter.updateVemNumber(updates.vemNumber);
-    }
-    if (updates.status) {
-      letter.updateStatus(updates.status);
-    }
-    if (updates.priority) {
-      letter.updatePriority(updates.priority);
-    }
-    if (updates.tags) {
-      for (const tag of updates.tags) {
-        letter.addTag(tag);
-      }
-    }
+    letter.update(updates);
 
     await this.repository.updateLetter(letter);
     return letter;

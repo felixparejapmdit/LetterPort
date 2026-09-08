@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { 
   fetchStats, 
   fetchLetters, 
+  getDownloadUrl,
   DashboardStats, 
   Letter 
 } from '@/lib/api';
@@ -21,7 +22,8 @@ import {
   RefreshCw,
   FolderOpen,
   Eye,
-  Hash
+  Hash,
+  Download
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -68,10 +70,10 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Letters Dashboard
+            Letter Dashboard
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Track and search all incoming and outgoing correspondence in one place.
+            Track, search, and manage all your letters.
           </p>
         </div>
 
@@ -89,77 +91,102 @@ export default function DashboardPage() {
             className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-500/20 transition transform active:scale-95"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Add Letter</span>
+            <span>Upload Letter</span>
           </Link>
         </div>
       </div>
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <div className="glass-card p-4 sm:p-5 rounded-2xl">
+        {/* Total */}
+        <Link 
+          href="/letters"
+          className="group glass-card p-4 sm:p-5 rounded-2xl hover:border-blue-500/50 hover:shadow-md transition-all block cursor-pointer"
+          title="View all letters"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</span>
-            <div className="p-2 bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 rounded-xl">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Total</span>
+            <div className="p-2 bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 rounded-xl group-hover:scale-110 transition-transform">
               <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-3">
+          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
             {loading ? '-' : stats?.totalLetters ?? 0}
           </p>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block">All saved letters</span>
-        </div>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Total letters &rarr;</span>
+        </Link>
 
-        <div className="glass-card p-4 sm:p-5 rounded-2xl">
+        {/* Incoming */}
+        <Link 
+          href="/letters?type=INCOMING"
+          className="group glass-card p-4 sm:p-5 rounded-2xl hover:border-emerald-500/50 hover:shadow-md transition-all block cursor-pointer"
+          title="View incoming letters"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Incoming</span>
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 rounded-xl group-hover:scale-110 transition-transform">
               <Inbox className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-emerald-900 dark:text-emerald-300 mt-3">
+          <p className="text-2xl sm:text-3xl font-extrabold text-emerald-900 dark:text-emerald-300 mt-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
             {loading ? '-' : stats?.incomingLetters ?? 0}
           </p>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block">Letters received</span>
-        </div>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Received letters &rarr;</span>
+        </Link>
 
-        <div className="glass-card p-4 sm:p-5 rounded-2xl">
+        {/* Outgoing */}
+        <Link 
+          href="/letters?type=OUTGOING"
+          className="group glass-card p-4 sm:p-5 rounded-2xl hover:border-indigo-500/50 hover:shadow-md transition-all block cursor-pointer"
+          title="View outgoing letters"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Outgoing</span>
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 rounded-xl group-hover:scale-110 transition-transform">
               <Send className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-indigo-900 dark:text-indigo-300 mt-3">
+          <p className="text-2xl sm:text-3xl font-extrabold text-indigo-900 dark:text-indigo-300 mt-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
             {loading ? '-' : stats?.outgoingLetters ?? 0}
           </p>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block">Letters sent</span>
-        </div>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Sent letters &rarr;</span>
+        </Link>
 
-        <div className="glass-card p-4 sm:p-5 rounded-2xl">
+        {/* Reading (OCR Scanning) */}
+        <Link 
+          href="/letters?ocrStatus=PENDING"
+          className="group glass-card p-4 sm:p-5 rounded-2xl hover:border-amber-500/50 hover:shadow-md transition-all block cursor-pointer"
+          title="View letters currently reading/scanning"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Reading</span>
-            <div className="p-2 bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 rounded-xl">
+            <span className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Scanning</span>
+            <div className="p-2 bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 rounded-xl group-hover:scale-110 transition-transform">
               <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-amber-900 dark:text-amber-300 mt-3">
+          <p className="text-2xl sm:text-3xl font-extrabold text-amber-900 dark:text-amber-300 mt-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
             {loading ? '-' : stats?.pendingOCR ?? 0}
           </p>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block">OCR scanning</span>
-        </div>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Scanning text &rarr;</span>
+        </Link>
 
-        <div className="glass-card p-4 sm:p-5 rounded-2xl col-span-2 sm:col-span-1">
+        {/* Urgent */}
+        <Link 
+          href="/letters?priority=URGENT"
+          className="group glass-card p-4 sm:p-5 rounded-2xl col-span-2 sm:col-span-1 hover:border-rose-500/50 hover:shadow-md transition-all block cursor-pointer"
+          title="View urgent letters"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Urgent</span>
-            <div className="p-2 bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-xl">
+            <div className="p-2 bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-xl group-hover:scale-110 transition-transform">
               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-rose-900 dark:text-rose-300 mt-3">
+          <p className="text-2xl sm:text-3xl font-extrabold text-rose-900 dark:text-rose-300 mt-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
             {loading ? '-' : stats?.urgentLetters ?? 0}
           </p>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block">Needs fast reply</span>
-        </div>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 inline-block group-hover:underline">Urgent attention &rarr;</span>
+        </Link>
       </div>
 
       {/* Quick Launchpad */}
@@ -273,20 +300,24 @@ export default function DashboardPage() {
                 <tr>
                   <th className="px-4 sm:px-6 py-3.5">Reference No</th>
                   <th className="px-4 py-3.5">VEM No</th>
-                  <th className="px-4 py-3.5">Direction</th>
+                  <th className="px-4 py-3.5">Type</th>
                   <th className="px-4 sm:px-6 py-3.5">Subject</th>
+                  <th className="px-4 py-3.5">Priority</th>
                   <th className="px-4 py-3.5 hidden md:table-cell">From / To</th>
                   <th className="px-4 py-3.5 hidden sm:table-cell">Date</th>
                   <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 sm:px-6 py-3.5 text-right">Action</th>
+                  <th className="px-4 sm:px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {recentLetters.map((l) => (
-                  <tr key={l.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
                     <td className="px-4 sm:px-6 py-4 font-mono font-semibold text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                      <Link href={`/letters/${l.id}`} className="hover:underline">
-                        {l.referenceNumber}
+                      <Link href={`/letters/${l.id}`} className="hover:underline flex items-center gap-1.5" title="Track & View Letter">
+                        {l.priority === 'URGENT' && (
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        )}
+                        <span>{l.referenceNumber}</span>
                       </Link>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
@@ -305,6 +336,16 @@ export default function DashboardPage() {
                     <td className="px-4 sm:px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate" title={l.subject}>
                       {l.subject}
                     </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {l.priority === 'URGENT' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 animate-pulse">
+                          <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                          Urgent
+                        </span>
+                      ) : (
+                        <PriorityBadge priority={l.priority} />
+                      )}
+                    </td>
                     <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden md:table-cell">
                       <div><strong className="text-slate-700 dark:text-slate-300 font-medium">From:</strong> {l.sender}</div>
                       <div><strong className="text-slate-700 dark:text-slate-300 font-medium">To:</strong> {l.recipient}</div>
@@ -316,14 +357,28 @@ export default function DashboardPage() {
                       <StatusBadge status={l.status} />
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
-                      <Link
-                        href={`/letters/${l.id}`}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition shadow-2xs"
-                        title={`View letter ${l.referenceNumber}`}
-                        aria-label={`View letter ${l.referenceNumber}`}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
+                      <div className="inline-flex items-center space-x-1.5">
+                        {/* Download Document */}
+                        <a
+                          href={getDownloadUrl(l.id)}
+                          download
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white transition shadow-2xs"
+                          title={`Download document for ${l.referenceNumber}`}
+                          aria-label={`Download document for ${l.referenceNumber}`}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+
+                        {/* View & Track */}
+                        <Link
+                          href={`/letters/${l.id}`}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition shadow-2xs"
+                          title={`Track and view letter ${l.referenceNumber}`}
+                          aria-label={`Track and view letter ${l.referenceNumber}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

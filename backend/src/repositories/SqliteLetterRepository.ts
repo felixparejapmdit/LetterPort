@@ -220,6 +220,18 @@ export class SqliteLetterRepository implements ILetterRepository {
       conditions.push(`status = ?`);
       params.push(filter.status);
     }
+    if (filter.priority) {
+      conditions.push(`priority = ?`);
+      params.push(filter.priority);
+    }
+    if (filter.ocrStatus) {
+      if (filter.ocrStatus.toUpperCase() === 'PENDING' || filter.ocrStatus.toUpperCase() === 'READING') {
+        conditions.push(`id IN (SELECT letter_id FROM ocr_records WHERE status IN ('PENDING', 'PROCESSING'))`);
+      } else {
+        conditions.push(`id IN (SELECT letter_id FROM ocr_records WHERE status = ?)`);
+        params.push(filter.ocrStatus);
+      }
+    }
     if (filter.startDate) {
       conditions.push(`letter_date >= ?`);
       params.push(filter.startDate);

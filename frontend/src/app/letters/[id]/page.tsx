@@ -14,6 +14,8 @@ import {
 } from '@/lib/api';
 import PDFViewer from '@/components/PDFViewer';
 import OCRTextViewer from '@/components/OCRTextViewer';
+import EditLetterModal from '@/components/EditLetterModal';
+import LetterTracker from '@/components/LetterTracker';
 import { StatusBadge, PriorityBadge, TypeBadge } from '@/components/StatusBadge';
 import { 
   ArrowLeft, 
@@ -26,7 +28,8 @@ import {
   Sparkles, 
   AlertCircle,
   CheckCircle2,
-  FileText
+  FileText,
+  Pencil
 } from 'lucide-react';
 
 export default function LetterDetailPage() {
@@ -40,6 +43,7 @@ export default function LetterDetailPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const loadLetter = async () => {
     try {
@@ -73,7 +77,8 @@ export default function LetterDetailPage() {
     setUpdatingStatus(true);
     try {
       const updated = await updateLetter(details.letter.id, { status: newStatus });
-      setDetails({ ...details, letter: updated });
+      setDetails(prev => prev ? { ...prev, letter: updated } : null);
+      await loadLetter();
     } catch (err) {
       console.error('Failed to update status:', err);
     } finally {
@@ -167,6 +172,15 @@ export default function LetterDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex items-center space-x-2 self-start md:self-auto">
+          <button
+            onClick={() => setIsEditOpen(true)}
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition transform active:scale-95"
+            title="Edit letter details"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>Edit Letter</span>
+          </button>
+
           {primaryAttachment && (
             <a
               href={getDownloadUrl(letter.id)}
@@ -227,8 +241,19 @@ export default function LetterDetailPage() {
           )}
         </div>
 
-        {/* Right Column: Metadata & Read Text Panel */}
+        {/* Right Column: Tracking, Metadata & Read Text Panel */}
         <div className="lg:col-span-5 space-y-5">
+          {/* Urgent Alert Banner */}
+          {letter.priority === 'URGENT' && (
+            <div className="flex items-center space-x-2.5 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold shadow-sm">
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              <span>Urgent Letter: Requires prompt attention or fast reply.</span>
+            </div>
+          )}
+
+          {/* Letter Tracking Pipeline */}
+          <LetterTracker letter={letter} ocrRecord={ocrRecord} />
+
           {/* Metadata Card */}
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -248,7 +273,7 @@ export default function LetterDetailPage() {
                   <option value="RECEIVED">Received</option>
                   <option value="DRAFT">Draft</option>
                   <option value="UNDER_REVIEW">In Review</option>
-                  <option value="PROCESSED">Completed / Done</option>
+                  <option value="PROCESSED">Completed</option>
                   <option value="ARCHIVED">Archived</option>
                 </select>
               </div>
@@ -259,7 +284,7 @@ export default function LetterDetailPage() {
                 <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/60">
                   <span className="text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-1">
                     <Hash className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    VEM-Number:
+                    VEM Number:
                   </span>
                   <span className="font-mono font-bold text-emerald-900 dark:text-emerald-200 text-xs">
                     {letter.vemNumber}
@@ -268,12 +293,12 @@ export default function LetterDetailPage() {
               )}
 
               <div>
-                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Sender:</span>
+                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">From (Sender):</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{letter.sender}</span>
               </div>
 
               <div>
-                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Recipient:</span>
+                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">To (Receiver):</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{letter.recipient}</span>
               </div>
 
@@ -308,7 +333,7 @@ export default function LetterDetailPage() {
             </div>
           </div>
 
-          {/* Read Text Panel */}
+          {/* Document Text Panel */}
           <div className="h-[430px]">
             <OCRTextViewer
               ocrRecord={ocrRecord}
@@ -318,6 +343,17 @@ export default function LetterDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Letter Modal */}
+      <EditLetterModal
+        isOpen={isEditOpen}
+        letter={letter}
+        onClose={() => setIsEditOpen(false)}
+        onSaved={async (updated) => {
+          setDetails((prev) => (prev ? { ...prev, letter: updated } : null));
+          await loadLetter();
+        }}
+      />
     </div>
   );
 }

@@ -107,6 +107,31 @@ export class Letter {
     this._updatedAt = new Date().toISOString();
   }
 
+  public update(props: {
+    type?: LetterType;
+    sender?: string;
+    recipient?: string;
+    subject?: string;
+    letterDate?: string;
+    receivedSentDate?: string;
+    vemNumber?: string;
+    status?: LetterStatus;
+    priority?: LetterPriority;
+    tags?: string[];
+  }): void {
+    if (props.type) this._type = props.type;
+    if (props.sender !== undefined && props.sender.trim()) this._sender = props.sender.trim();
+    if (props.recipient !== undefined && props.recipient.trim()) this._recipient = props.recipient.trim();
+    if (props.subject !== undefined && props.subject.trim()) this._subject = props.subject.trim();
+    if (props.letterDate) this._letterDate = props.letterDate;
+    if (props.receivedSentDate) this._receivedSentDate = props.receivedSentDate;
+    if (props.vemNumber !== undefined) this._vemNumber = props.vemNumber.trim();
+    if (props.status) this._status = props.status;
+    if (props.priority) this._priority = props.priority;
+    if (props.tags) this._tags = [...props.tags];
+    this._updatedAt = new Date().toISOString();
+  }
+
   public updateMetadata(sender: string, recipient: string, subject: string, vemNumber?: string): void {
     if (!sender.trim() || !recipient.trim() || !subject.trim()) {
       throw new Error('Sender, recipient, and subject cannot be blank');

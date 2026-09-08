@@ -110,6 +110,8 @@ export class LetterController {
       const {
         type,
         status,
+        priority,
+        ocrStatus,
         startDate,
         endDate,
         sender,
@@ -128,6 +130,8 @@ export class LetterController {
       const result = await this.letterService.listLetters({
         type: type as LetterType,
         status: status as LetterStatus,
+        priority: priority as LetterPriority,
+        ocrStatus: ocrStatus as string,
         startDate: startDate as string,
         endDate: endDate as string,
         sender: sender as string,
@@ -159,12 +163,15 @@ export class LetterController {
   public updateLetter = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const { sender, recipient, subject, vemNumber, status, priority, tags } = req.body;
+      const { type, sender, recipient, subject, letterDate, receivedSentDate, vemNumber, status, priority, tags } = req.body;
 
       const updated = await this.letterService.updateLetter(id, {
+        type: type as LetterType,
         sender,
         recipient,
         subject,
+        letterDate,
+        receivedSentDate,
         vemNumber,
         status: status as LetterStatus,
         priority: priority as LetterPriority,
@@ -181,7 +188,7 @@ export class LetterController {
 
       res.status(200).json({
         success: true,
-        data: { letter: updated.toJSON() }
+        data: updated.toJSON()
       });
     } catch (err) {
       next(err);

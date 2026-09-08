@@ -82,6 +82,8 @@ export async function fetchStats(): Promise<DashboardStats> {
 export async function fetchLetters(params?: {
   type?: string;
   status?: string;
+  priority?: string;
+  ocrStatus?: string;
   search?: string;
   page?: number;
   limit?: number;
@@ -89,6 +91,8 @@ export async function fetchLetters(params?: {
   const query = new URLSearchParams();
   if (params?.type) query.set('type', params.type);
   if (params?.status) query.set('status', params.status);
+  if (params?.priority) query.set('priority', params.priority);
+  if (params?.ocrStatus) query.set('ocrStatus', params.ocrStatus);
   if (params?.search) query.set('search', params.search);
   if (params?.page) query.set('page', params.page.toString());
   if (params?.limit) query.set('limit', params.limit.toString());
@@ -127,7 +131,7 @@ export async function updateLetter(id: string, data: Partial<Letter>): Promise<L
   });
   if (!res.ok) throw new Error('Failed to update letter');
   const json = await res.json();
-  return json.data;
+  return (json.data?.letter || json.data) as Letter;
 }
 
 export async function deleteLetter(id: string): Promise<void> {

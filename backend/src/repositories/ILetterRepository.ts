@@ -1,10 +1,12 @@
-import { Letter, LetterStatus, LetterType } from '../entities/Letter';
+import { Letter, LetterStatus, LetterType, LetterPriority } from '../entities/Letter';
 import { Attachment } from '../entities/Attachment';
 import { OCRRecord } from '../entities/OCRRecord';
 
 export interface LetterFilter {
   type?: LetterType;
   status?: LetterStatus;
+  priority?: LetterPriority;
+  ocrStatus?: string;
   startDate?: string;
   endDate?: string;
   sender?: string;

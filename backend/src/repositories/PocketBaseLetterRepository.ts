@@ -130,6 +130,7 @@ export class PocketBaseLetterRepository implements ILetterRepository {
 
     if (filter.type) filterClauses.push(`type = "${filter.type}"`);
     if (filter.status) filterClauses.push(`status = "${filter.status}"`);
+    if (filter.priority) filterClauses.push(`priority = "${filter.priority}"`);
     if (filter.startDate) filterClauses.push(`letterDate >= "${filter.startDate}"`);
     if (filter.endDate) filterClauses.push(`letterDate <= "${filter.endDate}"`);
     if (filter.sender) filterClauses.push(`sender ~ "${filter.sender}"`);

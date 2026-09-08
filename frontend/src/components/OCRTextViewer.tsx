@@ -38,22 +38,22 @@ export default function OCRTextViewer({
     PENDING: {
       color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800',
       icon: Clock,
-      label: 'Waiting to read...',
+      label: 'Waiting to scan',
     },
     PROCESSING: {
       color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-800',
       icon: RefreshCw,
-      label: 'Reading text now...',
+      label: 'Scanning text...',
     },
     COMPLETED: {
       color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800',
       icon: CheckCircle2,
-      label: 'Text reading complete',
+      label: 'Scanned',
     },
     FAILED: {
       color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800',
       icon: AlertCircle,
-      label: 'Could not read text',
+      label: 'Scan failed',
     },
   };
 
@@ -88,7 +88,7 @@ export default function OCRTextViewer({
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              Text Read from Document
+              Document Text
               <span
                 className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${config.color}`}
               >
@@ -100,7 +100,7 @@ export default function OCRTextViewer({
             </h3>
             {ocrRecord?.status === 'COMPLETED' && (
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                Reading accuracy: <strong className="text-emerald-700 dark:text-emerald-400">{ocrRecord.confidence}%</strong>
+                Accuracy: <strong className="text-emerald-700 dark:text-emerald-400">{ocrRecord.confidence}%</strong>
               </span>
             )}
           </div>
@@ -111,20 +111,20 @@ export default function OCRTextViewer({
             onClick={onReprocess}
             disabled={isReprocessing || currentStatus === 'PROCESSING'}
             className="flex items-center space-x-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition"
-            title="Read document text again"
+            title="Scan document text again"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isReprocessing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Read Again</span>
+            <span className="hidden sm:inline">Rescan</span>
           </button>
 
           <button
             onClick={handleCopy}
             disabled={!ocrRecord?.extractedText}
             className="flex items-center space-x-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-50 transition"
-            title="Copy text to clipboard"
+            title="Copy text"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Copied!' : 'Copy Text'}</span>
+            <span>{copied ? 'Copied' : 'Copy'}</span>
           </button>
         </div>
       </div>

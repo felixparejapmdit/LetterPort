@@ -142,10 +142,10 @@ export default function EncodePage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Add a New Letter
+          Upload Letter
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Fill in the letter details, assign a VEM number, and attach a scan or PDF.
+          Enter letter details and upload a document scan or PDF.
         </p>
       </div>
 
@@ -163,7 +163,7 @@ export default function EncodePage() {
         {/* Direction Selector */}
         <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm transition-colors">
           <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-            Is this letter incoming or outgoing?
+            Letter Type
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
@@ -176,7 +176,7 @@ export default function EncodePage() {
               }`}
             >
               <Inbox className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Incoming (Received from someone)</span>
+              <span>Incoming (Received)</span>
             </button>
 
             <button
@@ -189,7 +189,7 @@ export default function EncodePage() {
               }`}
             >
               <Send className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Outgoing (Sent by our office)</span>
+              <span>Outgoing (Sent)</span>
             </button>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function EncodePage() {
         {/* Details Card */}
         <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
           <h2 className="text-base font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-            Letter Identification & Details
+            Letter Details
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -282,13 +282,13 @@ export default function EncodePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {type === 'INCOMING' ? 'Sender (Who sent this letter?)' : 'Sender (Our department / sender)'} *
+                From (Sender) *
               </label>
               <input
                 type="text"
                 value={sender}
                 onChange={(e) => setSender(e.target.value)}
-                placeholder="e.g. Department of Finance or John Smith"
+                placeholder="Sender name or organization"
                 required
                 className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
               />
@@ -296,13 +296,13 @@ export default function EncodePage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {type === 'INCOMING' ? 'Recipient (Who is this letter for?)' : 'Recipient (Who are we sending to?)'} *
+                To (Receiver) *
               </label>
               <input
                 type="text"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                placeholder="e.g. Office Manager or Director"
+                placeholder="Receiver name or department"
                 required
                 className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
               />
@@ -311,13 +311,13 @@ export default function EncodePage() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Subject / Title (What is this letter about?) *
+              Subject *
             </label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g. Budget Approval or Request for Meeting"
+              placeholder="What is this letter about?"
               required
               className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-900 dark:text-slate-100"
             />
@@ -475,10 +475,10 @@ export default function EncodePage() {
                   <Upload className="w-6 h-6" />
                 </div>
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  Click here to choose a photo or PDF of the letter, or <span className="text-blue-600 dark:text-blue-400">drag it here</span>
+                  Click to choose a letter file, or <span className="text-blue-600 dark:text-blue-400">drag it here</span>
                 </p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  Supports PDF, JPG, PNG, and TIFF
+                  Supports PDF, JPG, and PNG
                 </p>
               </div>
             )}
@@ -503,12 +503,12 @@ export default function EncodePage() {
             {loading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Saving Letter & Reading Text...</span>
+                <span>Saving Letter...</span>
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Save Letter & Read Text</span>
+                <span>Save Letter</span>
               </>
             )}
           </button>

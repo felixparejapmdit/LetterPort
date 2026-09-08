@@ -67,10 +67,15 @@ export class SqliteLetterRepository implements ILetterRepository {
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'user',
+        avatar TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
     `);
+
+    try {
+      await this.run(`ALTER TABLE users ADD COLUMN avatar TEXT`);
+    } catch {}
 
     // System configuration table for custom formats
     await this.run(`
@@ -651,6 +656,7 @@ export class SqliteLetterRepository implements ILetterRepository {
       username: row.username,
       passwordHash: row.password_hash,
       role: row.role as UserRole,
+      avatar: row.avatar,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     });
@@ -664,6 +670,7 @@ export class SqliteLetterRepository implements ILetterRepository {
       username: row.username,
       passwordHash: row.password_hash,
       role: row.role as UserRole,
+      avatar: row.avatar,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     });
@@ -676,6 +683,7 @@ export class SqliteLetterRepository implements ILetterRepository {
       username: r.username,
       passwordHash: r.password_hash,
       role: r.role as UserRole,
+      avatar: r.avatar,
       createdAt: r.created_at,
       updatedAt: r.updated_at
     }));
@@ -683,15 +691,15 @@ export class SqliteLetterRepository implements ILetterRepository {
 
   public async saveUser(user: User): Promise<void> {
     await this.run(
-      `INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
-      [user.id, user.username, user.passwordHash, user.role, user.createdAt, user.updatedAt]
+      `INSERT INTO users (id, username, password_hash, role, avatar, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [user.id, user.username, user.passwordHash, user.role, user.avatar || null, user.createdAt, user.updatedAt]
     );
   }
 
   public async updateUser(user: User): Promise<void> {
     await this.run(
-      `UPDATE users SET username = ?, password_hash = ?, role = ?, updated_at = ? WHERE id = ?`,
-      [user.username, user.passwordHash, user.role, user.updatedAt, user.id]
+      `UPDATE users SET username = ?, password_hash = ?, role = ?, avatar = ?, updated_at = ? WHERE id = ?`,
+      [user.username, user.passwordHash, user.role, user.avatar || null, user.updatedAt, user.id]
     );
   }
 

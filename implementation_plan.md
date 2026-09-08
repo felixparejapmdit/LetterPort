@@ -167,9 +167,13 @@ LetterPort/
 #### [NEW] [frontend/src/app/encode/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/encode/page.tsx)
 #### [NEW] [frontend/src/app/letters/[id]/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/letters/[id]/page.tsx)
 #### [NEW] [frontend/src/app/search/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/search/page.tsx)
+#### [NEW] [frontend/src/app/settings/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/settings/page.tsx)
+#### [NEW] [frontend/src/app/access-matrix/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/access-matrix/page.tsx)
 #### [NEW] [frontend/src/components/Navbar.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/components/Navbar.tsx)
-#### [NEW] [frontend/src/components/PDFViewer.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/components/PDFViewer.tsx)
-#### [NEW] [frontend/Dockerfile](file:///d:/PROJECTS/LetterPort/frontend/Dockerfile)
+#### [NEW] [frontend/src/components/AccessMatrixEditor.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/components/AccessMatrixEditor.tsx)
+#### [NEW] [frontend/src/components/AppShell.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/components/AppShell.tsx)
+#### [NEW] [frontend/src/components/ActionDropdown.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/components/ActionDropdown.tsx)
+#### [NEW] [frontend/src/lib/permissions.ts](file:///d:/PROJECTS/LetterPort/frontend/src/lib/permissions.ts)
 
 ### Nginx Reverse Proxy (`/docker/nginx`)
 #### [NEW] [docker/nginx/default.conf](file:///d:/PROJECTS/LetterPort/docker/nginx/default.conf)
@@ -188,10 +192,11 @@ LetterPort/
    - Letter creation with file upload -> verify letter stored and OCR queued.
    - Retrieval endpoint -> verify letter metadata, attachment URL, and OCR record.
    - Search endpoint -> verify query matching both metadata and OCR text content.
+   - Permissions endpoint (`GET /api/settings/permissions` and `PUT /api/settings/permissions`) -> verify dynamic persistence.
 
 ### Manual Verification & Running
-1. Launch the local development environment using `npm run dev` (running Backend API on port 5000 and Next.js frontend on port 3000).
-2. Perform test upload of sample letters (image scan / PDF document) via the Letter Encoding interface.
-3. Verify that the background OCR process extracts the text automatically.
-4. Open the Letter Detail page and verify the in-browser PDF/image viewer alongside the extracted OCR text.
-5. Use the Full-Text Search interface to search for words contained inside the uploaded letter's body and confirm highlighted hit results.
+1. Verify `/login` page renders with a unified `#090d16` background and zero theme toggle button.
+2. Test Navbar Settings dropdown menu navigation (`General & Storage`, `User Accounts`, `Access Matrix`, `Reference Format`, `Backup & Recovery`).
+3. Verify `/settings` page segmented tab navigation displays each respective section cleanly without full page reloads.
+4. Verify `/access-matrix` and `/settings?tab=matrix` render the interactive `<AccessMatrixEditor />` with 34 toggleable action buttons and icons.
+5. Toggle permissions for Admin and Staff User roles, click "Save Matrix Changes", and verify immediate enforcement in table action menus (`ActionDropdown.tsx`) and letter detail toolbars.

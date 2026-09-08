@@ -82,6 +82,24 @@ export class SettingsService {
     }
   }
 
+  public async getPermissions(): Promise<Record<string, { admin: boolean; user: boolean }> | null> {
+    if (this.repository.getConfig) {
+      const raw = await this.repository.getConfig('access_permissions', '');
+      if (raw) {
+        try {
+          return JSON.parse(raw);
+        } catch {}
+      }
+    }
+    return null;
+  }
+
+  public async updatePermissions(permissions: Record<string, { admin: boolean; user: boolean }>): Promise<void> {
+    if (this.repository.setConfig) {
+      await this.repository.setConfig('access_permissions', JSON.stringify(permissions));
+    }
+  }
+
   public async loadSampleData(): Promise<{ count: number }> {
     const samples = [
       {

@@ -201,6 +201,11 @@ To run with **PocketBase**:
    ```
 3. Restart the backend. If PocketBase is temporarily unavailable, LetterPort automatically falls back to local SQLite to ensure uninterrupted uptime.
 
+#### PocketBase Admin UI & Database Browser:
+- **Dashboard URL**: [http://localhost:8090/_/](http://localhost:8090/_/)
+- **Superuser Email**: `admin@letterport.local`
+- **Superuser Password**: `adminpassword123`
+
 ---
 
 ### 🐳 Zero-Config Docker & NAS Deployment

@@ -117,4 +117,29 @@ export class SettingsController {
       next(err);
     }
   };
+
+  public getPermissions = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const permissions = await this.settingsService.getPermissions();
+      res.status(200).json({
+        success: true,
+        data: permissions
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public updatePermissions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await this.settingsService.updatePermissions(req.body);
+      res.status(200).json({
+        success: true,
+        message: 'Access permissions matrix updated successfully',
+        data: req.body
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

@@ -10,21 +10,20 @@
 
 .dark {
   --foreground-rgb: 241, 245, 249;
-  --background-start-rgb: 15, 23, 42;
-  --background-end-rgb: 2, 6, 23;
+  --background-start-rgb: 10, 14, 23;
+  --background-end-rgb: 9, 13, 22;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom right,
-      rgb(var(--background-start-rgb)),
-      rgb(var(--background-end-rgb))
-    )
-    fixed;
+  background-color: #f8fafc;
   min-height: 100vh;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dark body {
+  background-color: #090d16;
 }
 
 /* Custom scrollbar */
@@ -87,3 +86,109 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.35);
 }
+
+/* =========================================================
+   NOTION MINIMALIST DESIGN THEME (data-design="notion")
+   ========================================================= */
+[data-design="notion"] body {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  background-color: #fbfbfa !important;
+  color: #37352f !important;
+  letter-spacing: -0.011em;
+}
+
+.dark[data-design="notion"] body,
+[data-design="notion"].dark body {
+  background-color: #191919 !important;
+  color: #d4d4d4 !important;
+}
+
+/* Notion Compact Border Radius */
+[data-design="notion"] .rounded-2xl,
+[data-design="notion"] .rounded-3xl,
+[data-design="notion"] .rounded-xl {
+  border-radius: 8px !important;
+}
+
+[data-design="notion"] .rounded-full:not(.avatar-badge):not(.status-dot) {
+  border-radius: 6px !important;
+}
+
+/* Notion Flat Surfaces & Minimalist 1px Borders */
+[data-design="notion"] .shadow-sm,
+[data-design="notion"] .shadow-md,
+[data-design="notion"] .shadow-lg,
+[data-design="notion"] .shadow-xl,
+[data-design="notion"] .shadow-2xl {
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04) !important;
+}
+
+[data-design="notion"] .bg-white {
+  background-color: #ffffff !important;
+  border-color: #e3e2e0 !important;
+}
+
+.dark[data-design="notion"] .bg-slate-900,
+.dark[data-design="notion"] .bg-slate-950,
+.dark[data-design="notion"] .bg-\[\#0f172a\],
+[data-design="notion"] .dark .bg-slate-900,
+[data-design="notion"] .dark .bg-slate-950,
+[data-design="notion"] .dark .bg-\[\#0f172a\] {
+  background-color: #202020 !important;
+  border-color: #2e2e2e !important;
+}
+
+[data-design="notion"] .border-slate-100,
+[data-design="notion"] .border-slate-200,
+[data-design="notion"] .border-slate-200\/80 {
+  border-color: #e8e7e5 !important;
+}
+
+.dark[data-design="notion"] .border-slate-800,
+.dark[data-design="notion"] .border-slate-700,
+[data-design="notion"] .dark .border-slate-800,
+[data-design="notion"] .dark .border-slate-700 {
+  border-color: #2e2e2e !important;
+}
+
+/* Notion Crisp Table Rows */
+[data-design="notion"] table thead tr {
+  background-color: #f7f6f3 !important;
+  border-color: #e8e7e5 !important;
+}
+
+.dark[data-design="notion"] table thead tr,
+[data-design="notion"] .dark table thead tr {
+  background-color: #252525 !important;
+  border-color: #2e2e2e !important;
+}
+
+[data-design="notion"] tr:hover {
+  background-color: rgba(55, 53, 47, 0.035) !important;
+}
+
+.dark[data-design="notion"] tr:hover,
+[data-design="notion"] .dark tr:hover {
+  background-color: rgba(255, 255, 255, 0.035) !important;
+}
+
+/* Notion Minimalist Glass Header */
+[data-design="notion"] header {
+  background-color: rgba(251, 251, 250, 0.92) !important;
+  border-bottom: 1px solid #e3e2e0 !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.dark[data-design="notion"] header,
+[data-design="notion"] .dark header {
+  background-color: rgba(25, 25, 25, 0.92) !important;
+  border-bottom: 1px solid #2e2e2e !important;
+}
+
+/* Notion Inputs */
+[data-design="notion"] input,
+[data-design="notion"] select,
+[data-design="notion"] textarea {
+  border-radius: 6px !important;
+}
+

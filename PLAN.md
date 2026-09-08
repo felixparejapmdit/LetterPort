@@ -150,3 +150,8 @@ LetterPort/
 * **Sprint 6 (QR Code & SLA Alerts):** Physical QR sticker generator, official transmittal slips, and automated SLA due date calculation with overdue flags.
 * **Sprint 7 (Lateral Tracking & Custom Formats):** Full-height right-side slide-over drawer and customizable reference number formatting.
 * **Sprint 8 (Access Matrix, Table Hamburger & Clean UI):** Dedicated `/access-matrix` page, role view differentiation, compact `ActionDropdown` menu in tables, shortened search bar, and clean minimalist login page.
+* **Sprint 9 (Editable Access Matrix, Settings Categorization & Login Theme Polish):**
+  - **Settings Dropdown & Categorization**: Added categorized dropdown navigation in the Navbar leading to dedicated settings categories (`General & Storage`, `User Accounts`, `Access Matrix`, `Reference Format`, `Backup & Recovery`, and `My Profile & Password`).
+  - **Editable Access Matrix with Granular Action Icons & Buttons**: Expanded the Access Matrix into an interactive management tool allowing Administrators to toggle visibility of 34 discrete action buttons, icons, and features across all 6 pages (Dashboard, All Letters, Letter Details, Encode Letter, Live Search, and Settings).
+  - **Dynamic Permissions Storage & Synchronization**: Backend `GET /api/settings/permissions` and `PUT /api/settings/permissions` endpoints backed by `system_config` table. Frontend `AuthContext` provides `hasPermission(permissionId)` to dynamically guard table action dropdown items and detail page toolbars.
+  - **Login Screen Refinements**: Removed theme toggle button from login screen; eliminated central container banding on wide displays by introducing an isolated `AppShell` with seamless `#090d16` background.

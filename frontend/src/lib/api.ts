@@ -245,6 +245,7 @@ export interface UserProfile {
   id: string;
   username: string;
   role: 'admin' | 'user';
+  avatar?: string;
   password?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -282,7 +283,7 @@ export async function fetchUsers(token?: string): Promise<UserProfile[]> {
   return json.data;
 }
 
-export async function createUser(data: { username: string; password: string; role: 'admin' | 'user' }, token?: string): Promise<UserProfile> {
+export async function createUser(data: { username: string; password: string; role: 'admin' | 'user'; avatar?: string }, token?: string): Promise<UserProfile> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}/users`, {
@@ -298,7 +299,7 @@ export async function createUser(data: { username: string; password: string; rol
   return json.data;
 }
 
-export async function updateUser(id: string, data: { username?: string; password?: string; role?: 'admin' | 'user' }, token?: string): Promise<UserProfile> {
+export async function updateUser(id: string, data: { username?: string; password?: string; role?: 'admin' | 'user'; avatar?: string }, token?: string): Promise<UserProfile> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}/users/${id}`, {
@@ -354,3 +355,32 @@ export async function updateReferenceFormat(format: ReferenceFormatConfig): Prom
   const json = await res.json();
   return json.data;
 }
+
+// Access Matrix & Permissions
+export type RolePermissionsMap = Record<string, { admin: boolean; user: boolean }>;
+
+export async function fetchPermissions(): Promise<RolePermissionsMap | null> {
+  try {
+    const res = await fetch(`${API_BASE}/settings/permissions`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updatePermissions(permissions: RolePermissionsMap, token?: string): Promise<void> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/settings/permissions`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(permissions),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update permissions');
+  }
+}
+

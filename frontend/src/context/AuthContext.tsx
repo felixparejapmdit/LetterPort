@@ -2,13 +2,18 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { UserProfile, loginUser, fetchCurrentUser } from '../lib/api';
+import { UserProfile, loginUser, fetchCurrentUser, fetchPermissions, updatePermissions } from '../lib/api';
+import { ALL_PERMISSIONS, getDefaultPermissionsMap } from '../lib/permissions';
 
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   isLoading: boolean;
   isAdmin: boolean;
+  permissions: Record<string, { admin: boolean; user: boolean }>;
+  hasPermission: (permissionId: string) => boolean;
+  savePermissions: (newPermissions: Record<string, { admin: boolean; user: boolean }>) => Promise<void>;
+  updateUserAvatar: (avatarKey?: string) => void;
   login: (credentials: { username: string; password: string }) => Promise<void>;
   logout: () => void;
 }
@@ -19,12 +24,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [permissions, setPermissions] = useState<Record<string, { admin: boolean; user: boolean }>>(getDefaultPermissionsMap);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // 1. Load local cached permissions first
+        const cachedPerms = localStorage.getItem('letterport_permissions');
+        if (cachedPerms) {
+          try {
+            setPermissions({ ...getDefaultPermissionsMap(), ...JSON.parse(cachedPerms) });
+          } catch {}
+        }
+
+        // Fetch fresh permissions from backend
+        fetchPermissions()
+          .then((serverPerms) => {
+            if (serverPerms) {
+              const merged = { ...getDefaultPermissionsMap(), ...serverPerms };
+              setPermissions(merged);
+              localStorage.setItem('letterport_permissions', JSON.stringify(merged));
+            }
+          })
+          .catch(() => {});
+
+        // 2. Load auth credentials
         const storedAuth = localStorage.getItem('letterport_auth');
         if (storedAuth) {
           const parsed = JSON.parse(storedAuth);
@@ -37,9 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(freshUser);
                 localStorage.setItem('letterport_auth', JSON.stringify({ token: parsed.token, user: freshUser }));
               })
-              .catch(() => {
-                // Keep parsed or clear if invalid
-              });
+              .catch(() => {});
           }
         }
       } catch (err) {
@@ -78,8 +102,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAdmin = user?.role === 'admin';
 
+  const hasPermission = (permissionId: string): boolean => {
+    if (!user) return false;
+    const role = user.role === 'admin' ? 'admin' : 'user';
+    if (permissions[permissionId] !== undefined) {
+      return !!permissions[permissionId][role];
+    }
+    // Fallback based on default definitions
+    const def = ALL_PERMISSIONS.find((p) => p.id === permissionId);
+    if (!def) return role === 'admin';
+    return role === 'admin' ? def.defaultAdmin : def.defaultUser;
+  };
+
+  const savePermissions = async (newPermissions: Record<string, { admin: boolean; user: boolean }>) => {
+    setPermissions(newPermissions);
+    localStorage.setItem('letterport_permissions', JSON.stringify(newPermissions));
+    try {
+      await updatePermissions(newPermissions, token || undefined);
+    } catch (err) {
+      console.error('Failed to sync permissions with server:', err);
+    }
+  };
+
+  const updateUserAvatar = (avatarKey?: string) => {
+    if (!user) return;
+    const updated = { ...user, avatar: avatarKey };
+    setUser(updated);
+    if (token) {
+      localStorage.setItem('letterport_auth', JSON.stringify({ token, user: updated }));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAdmin, permissions, hasPermission, savePermissions, updateUserAvatar, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

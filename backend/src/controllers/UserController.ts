@@ -24,6 +24,7 @@ export class UserController {
           id: u.id,
           username: u.username,
           role: u.role,
+          avatar: u.avatar,
           createdAt: u.createdAt,
           updatedAt: u.updatedAt
         }))
@@ -35,7 +36,7 @@ export class UserController {
 
   public createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { username, password, role } = req.body;
+      const { username, password, role, avatar } = req.body;
       if (!username || !password) {
         res.status(400).json({ success: false, message: 'Username and password are required' });
         return;
@@ -56,7 +57,8 @@ export class UserController {
         id: uuidv4(),
         username,
         passwordHash: password,
-        role: (role === 'admin' ? 'admin' : 'user') as UserRole
+        role: (role === 'admin' ? 'admin' : 'user') as UserRole,
+        avatar: avatar || undefined
       });
 
       await this.repository.saveUser(user);
@@ -74,7 +76,7 @@ export class UserController {
   public updateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const { username, password, role } = req.body;
+      const { username, password, role, avatar } = req.body;
 
       if (!this.repository.getUserById || !this.repository.updateUser) {
         res.status(500).json({ success: false, message: 'User repository not supported' });
@@ -104,6 +106,10 @@ export class UserController {
 
       if (role && (role === 'admin' || role === 'user')) {
         user.updateRole(role);
+      }
+
+      if (avatar !== undefined) {
+        user.updateAvatar(avatar);
       }
 
       await this.repository.updateUser(user);

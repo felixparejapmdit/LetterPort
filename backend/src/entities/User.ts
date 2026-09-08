@@ -5,6 +5,7 @@ export interface UserProps {
   username: string;
   passwordHash: string;
   role: UserRole;
+  avatar?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -14,6 +15,7 @@ export class User {
   private _username: string;
   private _passwordHash: string;
   private _role: UserRole;
+  private _avatar?: string;
   private readonly _createdAt: string;
   private _updatedAt: string;
 
@@ -26,6 +28,7 @@ export class User {
     this._username = props.username.trim().toLowerCase();
     this._passwordHash = props.passwordHash;
     this._role = props.role || 'user';
+    this._avatar = props.avatar;
     this._createdAt = props.createdAt || new Date().toISOString();
     this._updatedAt = props.updatedAt || this._createdAt;
   }
@@ -34,6 +37,7 @@ export class User {
   public get username(): string { return this._username; }
   public get passwordHash(): string { return this._passwordHash; }
   public get role(): UserRole { return this._role; }
+  public get avatar(): string | undefined { return this._avatar; }
   public get createdAt(): string { return this._createdAt; }
   public get updatedAt(): string { return this._updatedAt; }
 
@@ -54,11 +58,17 @@ export class User {
     this._updatedAt = new Date().toISOString();
   }
 
-  public toJSON(): { id: string; username: string; role: UserRole; createdAt: string; updatedAt: string } {
+  public updateAvatar(newAvatar?: string): void {
+    this._avatar = newAvatar;
+    this._updatedAt = new Date().toISOString();
+  }
+
+  public toJSON(): { id: string; username: string; role: UserRole; avatar?: string; createdAt: string; updatedAt: string } {
     return {
       id: this._id,
       username: this._username,
       role: this._role,
+      avatar: this._avatar,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt
     };

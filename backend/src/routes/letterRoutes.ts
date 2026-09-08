@@ -39,6 +39,8 @@ export function createLetterRoutes(
   router.post('/settings/restore', settingsController.restoreBackup);
   router.get('/settings/reference-format', settingsController.getReferenceFormat);
   router.put('/settings/reference-format', settingsController.updateReferenceFormat);
+  router.get('/settings/permissions', settingsController.getPermissions);
+  router.put('/settings/permissions', settingsController.updatePermissions);
 
   // Full-Text Search
   router.get('/search', searchController.search);

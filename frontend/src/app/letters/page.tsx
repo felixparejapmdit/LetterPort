@@ -343,6 +343,7 @@ function LettersContent() {
                       <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                         <ActionDropdown
                           letter={l}
+                          pageContext="letters"
                           onTrack={(letter) => setTrackingLetter(letter)}
                           onEdit={(letter) => setEditingLetter(letter)}
                           onDelete={async (letter) => {

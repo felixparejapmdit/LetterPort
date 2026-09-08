@@ -20,6 +20,7 @@ interface ActionDropdownProps {
   onEdit: (letter: Letter) => void;
   onDelete?: (letter: Letter) => void;
   downloadUrl: string;
+  pageContext?: 'dashboard' | 'letters';
 }
 
 export default function ActionDropdown({
@@ -28,10 +29,21 @@ export default function ActionDropdown({
   onEdit,
   onDelete,
   downloadUrl,
+  pageContext = 'dashboard',
 }: ActionDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasPermission } = useAuth();
+
+  const isDashboard = pageContext === 'dashboard';
+  const canTrack = hasPermission(isDashboard ? 'dashboard_track' : 'letters_track');
+  const canView = hasPermission(isDashboard ? 'dashboard_view' : 'letters_view');
+  const canEdit = hasPermission(isDashboard ? 'dashboard_edit' : 'letters_edit');
+  const canDownload = hasPermission(isDashboard ? 'dashboard_download' : 'letters_download');
+  const canSticker = isDashboard ? true : hasPermission('letters_sticker');
+  const canDelete = hasPermission(isDashboard ? 'dashboard_delete' : 'letters_delete');
+
+  const hasAnyAction = canTrack || canView || canEdit || canDownload || canSticker || (isAdmin && canDelete);
 
   // Close on outside click or escape key
   useEffect(() => {
@@ -62,6 +74,14 @@ export default function ActionDropdown({
     action();
   };
 
+  if (!hasAnyAction) {
+    return (
+      <span className="text-slate-300 dark:text-slate-700 text-xs italic">
+        No actions
+      </span>
+    );
+  }
+
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       {/* Compact 3-Dots / Hamburger Button */}
@@ -90,59 +110,73 @@ export default function ActionDropdown({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Primary View & Track Actions */}
-          <div className="py-1">
-            <button
-              type="button"
-              onClick={() => handleAction(() => onTrack(letter))}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-700 dark:hover:text-amber-400 transition text-left cursor-pointer"
-            >
-              <Activity className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>Track Progress</span>
-            </button>
+          {(canTrack || canView || canEdit) && (
+            <div className="py-1">
+              {canTrack && (
+                <button
+                  type="button"
+                  onClick={() => handleAction(() => onTrack(letter))}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-700 dark:hover:text-amber-400 transition text-left cursor-pointer"
+                >
+                  <Activity className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Track Progress</span>
+                </button>
+              )}
 
-            <Link
-              href={`/letters/${letter.id}`}
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-700 dark:hover:text-indigo-400 transition text-left cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-              <span>View Document</span>
-            </Link>
+              {canView && (
+                <Link
+                  href={`/letters/${letter.id}`}
+                  onClick={() => setIsOpen(false)}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-700 dark:hover:text-indigo-400 transition text-left cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span>View Document</span>
+                </Link>
+              )}
 
-            <button
-              type="button"
-              onClick={() => handleAction(() => onEdit(letter))}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-700 dark:hover:text-blue-400 transition text-left cursor-pointer"
-            >
-              <Pencil className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              <span>Edit Details</span>
-            </button>
-          </div>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => handleAction(() => onEdit(letter))}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-700 dark:hover:text-blue-400 transition text-left cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>Edit Details</span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Download & Sticker Actions */}
-          <div className="py-1">
-            <a
-              href={downloadUrl}
-              download
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-700 dark:hover:text-emerald-400 transition text-left cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <span>Download PDF</span>
-            </a>
+          {(canDownload || canSticker) && (
+            <div className="py-1">
+              {canDownload && (
+                <a
+                  href={downloadUrl}
+                  download
+                  onClick={() => setIsOpen(false)}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-700 dark:hover:text-emerald-400 transition text-left cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span>Download PDF</span>
+                </a>
+              )}
 
-            <Link
-              href={`/letters/${letter.id}?sticker=true`}
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-700 dark:hover:text-purple-400 transition text-left cursor-pointer"
-            >
-              <QrCode className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-              <span>Sticker & Slip</span>
-            </Link>
-          </div>
+              {canSticker && (
+                <Link
+                  href={`/letters/${letter.id}?sticker=true`}
+                  onClick={() => setIsOpen(false)}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-700 dark:hover:text-purple-400 transition text-left cursor-pointer"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <span>Sticker & Slip</span>
+                </Link>
+              )}
+            </div>
+          )}
 
-          {/* Delete Action (Admin Only) */}
-          {isAdmin && onDelete && (
+          {/* Delete Action (Admin Only & checked with permissions) */}
+          {canDelete && onDelete && (
             <div className="py-1">
               <button
                 type="button"

@@ -44,7 +44,7 @@ export default function LetterDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = params?.id as string;
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasPermission } = useAuth();
 
   const [details, setDetails] = useState<LetterDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -197,36 +197,42 @@ export default function LetterDetailPage() {
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
           {/* Tracking Drawer Button */}
-          <button
-            onClick={() => setIsTrackingOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-semibold shadow-2xs transition"
-            title="Open tracking drawer"
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>Track</span>
-          </button>
+          {hasPermission('detail_track') && (
+            <button
+              onClick={() => setIsTrackingOpen(true)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-semibold shadow-2xs transition"
+              title="Open tracking drawer"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>Track</span>
+            </button>
+          )}
 
           {/* QR Sticker / Routing Slip Button */}
-          <button
-            onClick={() => setIsStickerOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold shadow-2xs transition border border-slate-200 dark:border-slate-700"
-            title="Print QR code folder sticker or routing slip"
-          >
-            <QrCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>Sticker / Slip</span>
-          </button>
+          {hasPermission('detail_sticker') && (
+            <button
+              onClick={() => setIsStickerOpen(true)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold shadow-2xs transition border border-slate-200 dark:border-slate-700"
+              title="Print QR code folder sticker or routing slip"
+            >
+              <QrCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Sticker / Slip</span>
+            </button>
+          )}
 
           {/* Edit Letter */}
-          <button
-            onClick={() => setIsEditOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition transform active:scale-95"
-            title="Edit letter details"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            <span>Edit Letter</span>
-          </button>
+          {hasPermission('detail_edit') && (
+            <button
+              onClick={() => setIsEditOpen(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition transform active:scale-95"
+              title="Edit letter details"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit Letter</span>
+            </button>
+          )}
 
-          {primaryAttachment && (
+          {primaryAttachment && hasPermission('detail_download') && (
             <a
               href={getDownloadUrl(letter.id)}
               download
@@ -238,7 +244,7 @@ export default function LetterDetailPage() {
           )}
 
           {/* Delete Action - Admin Only */}
-          {isAdmin && (
+          {isAdmin && hasPermission('detail_delete') && (
             deleteConfirm ? (
               <div className="flex items-center space-x-1.5 bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-900 p-1 rounded-xl">
                 <span className="text-xs text-rose-700 dark:text-rose-300 font-semibold px-2">Delete?</span>
@@ -312,18 +318,24 @@ export default function LetterDetailPage() {
               {/* Status Changer */}
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-slate-400 dark:text-slate-500">Status:</span>
-                <select
-                  value={letter.status}
-                  disabled={updatingStatus}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="RECEIVED">Received</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="UNDER_REVIEW">In Review</option>
-                  <option value="PROCESSED">Completed</option>
-                  <option value="ARCHIVED">Archived</option>
-                </select>
+                {hasPermission('detail_status_change') ? (
+                  <select
+                    value={letter.status}
+                    disabled={updatingStatus}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="RECEIVED">Received</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="UNDER_REVIEW">In Review</option>
+                    <option value="PROCESSED">Completed</option>
+                    <option value="ARCHIVED">Archived</option>
+                  </select>
+                ) : (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    {letter.status}
+                  </span>
+                )}
               </div>
             </div>
 

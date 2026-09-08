@@ -188,24 +188,33 @@ To run with **PocketBase**:
 
 ---
 
-### 🐳 Docker Production Deployment
+### 🐳 Zero-Config Docker & NAS Deployment
 
-LetterPort is fully containerized and OS-agnostic. To deploy the entire production stack (Frontend, Backend, PocketBase, PostgreSQL, Redis, OCR Worker, and Nginx reverse proxy):
+LetterPort is completely containerized, self-contained, and uses **relative storage paths** (`./letterport_data` and `./db_data`) so you can deploy on any NAS without configuring host drive paths or external SMB mappings.
 
+#### 1-Click Installer (Linux, macOS, Synology, QNAP, TrueNAS)
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+Or start manually with Docker Compose:
 ```bash
 docker compose up -d --build
 ```
 
+> 📖 **Full NAS Guide**: For detailed GUI instructions on Synology Container Manager, QNAP Container Station, TrueNAS, and Portainer, see [NAS_DEPLOYMENT_GUIDE.md](file:///d:/PROJECTS/LetterPort/NAS_DEPLOYMENT_GUIDE.md).
+
 #### Running Services:
-| Service | Container Name | Port | Description |
+| Service | Container Name | Host Port | Description |
 |---|---|---|---|
-| **Nginx** | `letterport-nginx` | `80`, `443` | Reverse proxy & static assets |
-| **Web** | `letterport-web` | `3000` | Next.js 14 Production Server |
-| **API** | `letterport-api` | `5000` | Node.js Express REST API |
-| **PocketBase** | `letterport-pocketbase` | `8090` | Embedded backend & Admin UI |
+| **Nginx** | `letterport-nginx` | `80`, `3001`, `443` | Reverse proxy gateway & static document server |
+| **Web** | `letterport-web` | Internal (`3001`) | Next.js 14 Production Server |
+| **API** | `letterport-api` | Internal (`5000`) | Node.js Express REST API |
 | **Worker** | `letterport-worker` | Internal | Dedicated Tesseract OCR worker |
-| **Database** | `letterport-db` | `5432` | PostgreSQL 16 database |
+| **Database** | `letterport-db` | `5432` | PostgreSQL 16 database (`./db_data`) |
 | **Redis** | `letterport-redis` | `6379` | In-memory job queue cache |
+| **PocketBase** | `letterport-pocketbase` | `8090` | Embedded backend & Admin UI |
 
 To stop the containers:
 ```bash

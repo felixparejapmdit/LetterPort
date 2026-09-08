@@ -22,7 +22,7 @@ import { errorHandler } from './middleware/errorHandler';
 // Load environment variables
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '5000', 10);
+const PORT = parseInt(process.env.PORT || '5001', 10);
 const DB_PATH = path.resolve(process.env.DATABASE_FILE || './data/letterport.db');
 const STORAGE_DIR = path.resolve(process.env.STORAGE_DIR || './uploads');
 const DB_TYPE = process.env.DATABASE_TYPE || 'sqlite';

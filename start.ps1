@@ -12,9 +12,9 @@ $backendJob = Start-Job -ScriptBlock {
     npm run dev
 } -ArgumentList $PSScriptRoot
 
-Write-Host "Backend API booting on http://localhost:5000..." -ForegroundColor Yellow
+Write-Host "Backend API booting on http://localhost:5001..." -ForegroundColor Yellow
 Start-Sleep -Seconds 2
 
 Set-Location "$PSScriptRoot\frontend"
-Write-Host "Starting Next.js Frontend on http://localhost:3000..." -ForegroundColor Green
+Write-Host "Starting Next.js Frontend on http://localhost:3001..." -ForegroundColor Green
 npm run dev

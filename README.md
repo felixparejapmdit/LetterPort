@@ -136,14 +136,14 @@ cp .env.example .env
 
 Default configuration works out of the box with zero setup:
 ```env
-PORT=5000
-FRONTEND_PORT=3000
+PORT=5001
+FRONTEND_PORT=3001
 DATABASE_TYPE=sqlite
 DATABASE_FILE=./data/letterport.db
 STORAGE_DIR=./uploads
 QUEUE_TYPE=local
 OCR_ENGINE=tesseract
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5001/api
 ```
 
 #### Step 4: Run in Development Mode
@@ -164,11 +164,11 @@ cd frontend
 npm run dev
 ```
 
-- **Frontend Application**: [http://localhost:3000](http://localhost:3000)
-- **Backend API**: [http://localhost:5000/api](http://localhost:5000/api)
-- **API Health Check**: [http://localhost:5000/health](http://localhost:5000/health)
+- **Frontend Application**: [http://localhost:3001](http://localhost:3001)
+- **Backend API**: [http://localhost:5001/api](http://localhost:5001/api)
+- **API Health Check**: [http://localhost:5001/health](http://localhost:5001/health)
 
-*(Windows users can also double-click `start-dev.bat` to launch instantly).*
+*(Windows users can double-click `start-dev.bat`, Mac users can double-click `start-dev.command`, or run `./start-dev.sh` on Linux/macOS).*
 
 ---
 

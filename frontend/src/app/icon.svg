@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="lms-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="50%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#6366F1" />
+    </linearGradient>
+    <filter id="shadow" x="-4" y="-2" width="72" height="72" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1E3A8A" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#lms-grad)" filter="url(#shadow)" />
+
+  <g transform="translate(12, 14)">
+    <rect x="0" y="4" width="40" height="28" rx="4" fill="white" fill-opacity="0.95" />
+    <line x1="8" y1="13" x2="22" y2="13" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="8" y1="19" x2="32" y2="19" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" />
+    <line x1="8" y1="24" x2="26" y2="24" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" />
+    <circle cx="32" cy="11" r="3.5" fill="#3B82F6" />
+  </g>
+</svg>

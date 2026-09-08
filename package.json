@@ -1,0 +1,19 @@
+{
+  "name": "letterport",
+  "version": "1.0.0",
+  "description": "Robust Letter Management System (LMS) with OCR and Full-Text Search",
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../worker && npm install",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "test": "cd backend && npm test",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["lms", "letter-management", "ocr", "nextjs", "express", "typescript", "tesseract"]
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#ffffff"/>
+  <rect x="40" y="40" width="720" height="920" fill="none" stroke="#2563eb" stroke-width="2"/>
+  <text x="400" y="100" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#1e3a8a" text-anchor="middle">MINISTRY OF DIGITAL GOVERNANCE</text>
+  <text x="400" y="130" font-family="Arial, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">OFFICIAL STATUTORY CORRESPONDENCE</text>
+  <line x1="80" y1="150" x2="720" y2="150" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="80" y="190" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Reference: LP-MEMO-2026-X99</text>
+  <text x="80" y="215" font-family="Arial, sans-serif" font-size="13" fill="#334155">Date: September 08, 2026</text>
+  <text x="80" y="240" font-family="Arial, sans-serif" font-size="13" fill="#334155">To: Executive Council Director</text>
+  <text x="80" y="265" font-family="Arial, sans-serif" font-size="13" fill="#334155">From: Office of Public Records and Infrastructure</text>
+  <text x="80" y="320" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1e293b">SUBJECT: APPROVAL OF DIGITAL EXPANSION GRANT</text>
+  <text x="80" y="370" font-family="Arial, sans-serif" font-size="14" fill="#334155">Dear Executive Director,</text>
+  <text x="80" y="410" font-family="Arial, sans-serif" font-size="13" fill="#334155">We are pleased to inform you that the Digital Modernization and OCR System</text>
+  <text x="80" y="435" font-family="Arial, sans-serif" font-size="13" fill="#334155">project funding of $12,500,000 has been sanctioned for immediate deployment.</text>
+  <text x="80" y="475" font-family="Arial, sans-serif" font-size="13" fill="#334155">All correspondence records must be preserved securely in the digital repository.</text>
+  <text x="80" y="550" font-family="Arial, sans-serif" font-size="13" font-style="italic" fill="#64748b">Verified by National Archival Authority</text>
+</svg>

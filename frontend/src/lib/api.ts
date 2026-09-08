@@ -1,0 +1,243 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+export interface Letter {
+  id: string;
+  referenceNumber: string;
+  vemNumber?: string;
+  type: 'INCOMING' | 'OUTGOING';
+  sender: string;
+  recipient: string;
+  subject: string;
+  letterDate: string;
+  receivedSentDate: string;
+  status: 'DRAFT' | 'RECEIVED' | 'UNDER_REVIEW' | 'PROCESSED' | 'ARCHIVED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Attachment {
+  id: string;
+  letterId: string;
+  originalName: string;
+  storedFilename: string;
+  filePath: string;
+  mimeType: string;
+  fileSize: number;
+  checksum: string;
+  createdAt: string;
+  isPdf: boolean;
+  isImage: boolean;
+}
+
+export interface OCRRecord {
+  id: string;
+  letterId: string;
+  attachmentId: string;
+  extractedText: string;
+  confidence: number;
+  pageCount: number;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  errorMessage: string | null;
+  processedAt: string | null;
+}
+
+export interface LetterDetails {
+  letter: Letter;
+  attachments: Attachment[];
+  ocrRecord: OCRRecord | null;
+}
+
+export interface SearchResultItem {
+  letter: Letter;
+  attachment?: Attachment;
+  ocrRecord?: OCRRecord;
+  matchSnippet?: string;
+  matchType: 'METADATA' | 'OCR';
+}
+
+export interface DashboardStats {
+  totalLetters: number;
+  incomingLetters: number;
+  outgoingLetters: number;
+  pendingOCR: number;
+  urgentLetters: number;
+  recentActivity: Array<{
+    id: string;
+    action: string;
+    referenceNumber: string;
+    subject: string;
+    timestamp: string;
+  }>;
+}
+
+export async function fetchStats(): Promise<DashboardStats> {
+  const res = await fetch(`${API_BASE}/stats`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch dashboard stats');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchLetters(params?: {
+  type?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ letters: Letter[]; pagination: { total: number; totalPages: number; page: number } }> {
+  const query = new URLSearchParams();
+  if (params?.type) query.set('type', params.type);
+  if (params?.status) query.set('status', params.status);
+  if (params?.search) query.set('search', params.search);
+  if (params?.page) query.set('page', params.page.toString());
+  if (params?.limit) query.set('limit', params.limit.toString());
+
+  const res = await fetch(`${API_BASE}/letters?${query.toString()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch letters');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchLetter(id: string): Promise<LetterDetails> {
+  const res = await fetch(`${API_BASE}/letters/${id}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Letter not found');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function createLetter(formData: FormData): Promise<LetterDetails> {
+  const res = await fetch(`${API_BASE}/letters`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const errorJson = await res.json().catch(() => ({}));
+    throw new Error(errorJson.error?.message || 'Failed to encode letter');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export async function updateLetter(id: string, updates: Partial<Letter>): Promise<Letter> {
+  const res = await fetch(`${API_BASE}/letters/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error('Failed to update letter');
+  const json = await res.json();
+  return json.data.letter;
+}
+
+export async function deleteLetter(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/letters/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete letter');
+}
+
+export async function reprocessOCR(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/letters/${id}/re-ocr`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to trigger OCR');
+}
+
+export async function searchLetters(q: string): Promise<{ query: string; total: number; results: SearchResultItem[] }> {
+  const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Search failed');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function getNextReference(type: 'INCOMING' | 'OUTGOING'): Promise<string> {
+  const res = await fetch(`${API_BASE}/letters/next-reference?type=${type}`, { cache: 'no-store' });
+  if (!res.ok) return '';
+  const json = await res.json();
+  return json.data?.referenceNumber || '';
+}
+
+export async function getNextVem(): Promise<string> {
+  const res = await fetch(`${API_BASE}/letters/next-vem`, { cache: 'no-store' });
+  if (!res.ok) return '';
+  const json = await res.json();
+  return json.data?.nextVemNumber || '';
+}
+
+export interface NasConfig {
+  enabled: boolean;
+  protocol: 'MOUNTED_PATH' | 'SMB' | 'NFS' | 'WEBDAV';
+  host: string;
+  sharePath: string;
+  username?: string;
+  password?: string;
+  autoSync: boolean;
+  lastTested?: string;
+  testStatus?: 'OK' | 'FAILED' | 'UNTESTED';
+  testMessage?: string;
+}
+
+export interface StorageInfo {
+  storageDirectory: string;
+  databasePath: string;
+  databaseSizeBytes: number;
+  totalLetters: number;
+  nasConfigured: boolean;
+  nasPath: string;
+  nasStatus: string;
+}
+
+export async function fetchSettings(): Promise<{ nas: NasConfig; storageInfo: StorageInfo }> {
+  const res = await fetch(`${API_BASE}/settings`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch settings');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function saveNasSettings(config: NasConfig): Promise<NasConfig> {
+  const res = await fetch(`${API_BASE}/settings/nas`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) throw new Error('Failed to save NAS settings');
+  const json = await res.json();
+  return json.data;
+}
+
+export async function testNasConnection(config: NasConfig): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/settings/nas/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  const json = await res.json();
+  return json;
+}
+
+export async function loadSampleData(): Promise<{ count: number; message: string }> {
+  const res = await fetch(`${API_BASE}/settings/sample-data/load`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to load sample data');
+  const json = await res.json();
+  return { count: json.data.count, message: json.message };
+}
+
+export async function clearSampleData(): Promise<{ deleted: number; message: string }> {
+  const res = await fetch(`${API_BASE}/settings/sample-data/clear`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to clear data');
+  const json = await res.json();
+  return { deleted: json.data.deleted, message: json.message };
+}
+
+export function getFileUrl(letterId: string): string {
+  return `${API_BASE}/letters/${letterId}/file`;
+}
+
+export function getDownloadUrl(letterId: string): string {
+  return `${API_BASE}/letters/${letterId}/download`;
+}

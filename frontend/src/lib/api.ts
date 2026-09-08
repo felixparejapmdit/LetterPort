@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export interface Letter {
   id: string;
@@ -101,33 +101,33 @@ export async function fetchLetters(params?: {
 
 export async function fetchLetter(id: string): Promise<LetterDetails> {
   const res = await fetch(`${API_BASE}/letters/${id}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Letter not found');
+  if (!res.ok) throw new Error('Failed to fetch letter details');
   const json = await res.json();
   return json.data;
 }
 
-export async function createLetter(formData: FormData): Promise<LetterDetails> {
+export async function createLetter(formData: FormData): Promise<{ letter: Letter; attachment?: Attachment }> {
   const res = await fetch(`${API_BASE}/letters`, {
     method: 'POST',
     body: formData,
   });
   if (!res.ok) {
-    const errorJson = await res.json().catch(() => ({}));
-    throw new Error(errorJson.error?.message || 'Failed to encode letter');
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to create letter');
   }
   const json = await res.json();
   return json.data;
 }
 
-export async function updateLetter(id: string, updates: Partial<Letter>): Promise<Letter> {
+export async function updateLetter(id: string, data: Partial<Letter>): Promise<Letter> {
   const res = await fetch(`${API_BASE}/letters/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
+    body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to update letter');
   const json = await res.json();
-  return json.data.letter;
+  return json.data;
 }
 
 export async function deleteLetter(id: string): Promise<void> {
@@ -137,16 +137,18 @@ export async function deleteLetter(id: string): Promise<void> {
   if (!res.ok) throw new Error('Failed to delete letter');
 }
 
-export async function reprocessOCR(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/letters/${id}/re-ocr`, {
+export async function reprocessOCR(letterId: string): Promise<OCRRecord> {
+  const res = await fetch(`${API_BASE}/letters/${letterId}/re-ocr`, {
     method: 'POST',
   });
-  if (!res.ok) throw new Error('Failed to trigger OCR');
+  if (!res.ok) throw new Error('Failed to reprocess OCR');
+  const json = await res.json();
+  return json.data;
 }
 
 export async function searchLetters(q: string): Promise<{ query: string; total: number; results: SearchResultItem[] }> {
   const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Search failed');
+  if (!res.ok) throw new Error('Failed to search letters');
   const json = await res.json();
   return json.data;
 }
@@ -155,7 +157,7 @@ export async function getNextReference(type: 'INCOMING' | 'OUTGOING'): Promise<s
   const res = await fetch(`${API_BASE}/letters/next-reference?type=${type}`, { cache: 'no-store' });
   if (!res.ok) return '';
   const json = await res.json();
-  return json.data?.referenceNumber || '';
+  return json.data?.nextReference || '';
 }
 
 export async function getNextVem(): Promise<string> {
@@ -165,17 +167,13 @@ export async function getNextVem(): Promise<string> {
   return json.data?.nextVemNumber || '';
 }
 
-export interface NasConfig {
-  enabled: boolean;
-  protocol: 'MOUNTED_PATH' | 'SMB' | 'NFS' | 'WEBDAV';
-  host: string;
-  sharePath: string;
-  username?: string;
-  password?: string;
-  autoSync: boolean;
-  lastTested?: string;
-  testStatus?: 'OK' | 'FAILED' | 'UNTESTED';
-  testMessage?: string;
+export interface SystemInfo {
+  version: string;
+  edition: string;
+  architecture: string;
+  storageMode: string;
+  storageDirectory: string;
+  updateStatus: string;
 }
 
 export interface StorageInfo {
@@ -183,37 +181,13 @@ export interface StorageInfo {
   databasePath: string;
   databaseSizeBytes: number;
   totalLetters: number;
-  nasConfigured: boolean;
-  nasPath: string;
-  nasStatus: string;
 }
 
-export async function fetchSettings(): Promise<{ nas: NasConfig; storageInfo: StorageInfo }> {
+export async function fetchSettings(): Promise<{ systemInfo: SystemInfo; storageInfo: StorageInfo }> {
   const res = await fetch(`${API_BASE}/settings`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch settings');
   const json = await res.json();
   return json.data;
-}
-
-export async function saveNasSettings(config: NasConfig): Promise<NasConfig> {
-  const res = await fetch(`${API_BASE}/settings/nas`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
-  });
-  if (!res.ok) throw new Error('Failed to save NAS settings');
-  const json = await res.json();
-  return json.data;
-}
-
-export async function testNasConnection(config: NasConfig): Promise<{ success: boolean; message: string }> {
-  const res = await fetch(`${API_BASE}/settings/nas/test`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
-  });
-  const json = await res.json();
-  return json;
 }
 
 export async function loadSampleData(): Promise<{ count: number; message: string }> {

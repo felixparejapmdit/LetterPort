@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { SettingsService, NasConfig } from '../services/SettingsService';
+import { SettingsService } from '../services/SettingsService';
 
 export class SettingsController {
   private readonly settingsService: SettingsService;
@@ -10,44 +10,15 @@ export class SettingsController {
 
   public getSettings = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const nas = this.settingsService.getNasConfig();
+      const systemInfo = this.settingsService.getSystemInfo();
       const storageInfo = await this.settingsService.getStorageInfo();
 
       res.status(200).json({
         success: true,
         data: {
-          nas,
+          systemInfo,
           storageInfo
         }
-      });
-    } catch (err) {
-      next(err);
-    }
-  };
-
-  public saveNasSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const config: NasConfig = req.body;
-      const saved = this.settingsService.saveNasConfig(config);
-
-      res.status(200).json({
-        success: true,
-        message: 'NAS server settings saved successfully.',
-        data: saved
-      });
-    } catch (err) {
-      next(err);
-    }
-  };
-
-  public testNasConnection = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const config: NasConfig = req.body;
-      const result = await this.settingsService.testNasConnection(config);
-
-      res.status(200).json({
-        success: result.success,
-        message: result.message
       });
     } catch (err) {
       next(err);

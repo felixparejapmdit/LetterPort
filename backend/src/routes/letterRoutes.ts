@@ -16,13 +16,11 @@ export function createLetterRoutes(
   // Dashboard Statistics
   router.get('/stats', statsController.getStats);
 
-  // Settings & NAS Configuration
+  // System Settings & Maintenance
   router.get('/settings', settingsController.getSettings);
-  router.post('/settings/nas', settingsController.saveNasSettings);
-  router.post('/settings/nas/test', settingsController.testNasConnection);
+  router.get('/settings/storage-info', settingsController.getStorageInfo);
   router.post('/settings/sample-data/load', settingsController.loadSampleData);
   router.post('/settings/sample-data/clear', settingsController.clearSampleData);
-  router.get('/settings/storage-info', settingsController.getStorageInfo);
 
   // Full-Text Search
   router.get('/search', searchController.search);

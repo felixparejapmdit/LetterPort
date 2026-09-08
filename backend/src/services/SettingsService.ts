@@ -7,123 +7,60 @@ import { Letter } from '../entities/Letter';
 import { Attachment } from '../entities/Attachment';
 import { OCRRecord } from '../entities/OCRRecord';
 
-export interface NasConfig {
-  enabled: boolean;
-  protocol: 'MOUNTED_PATH' | 'SMB' | 'NFS' | 'WEBDAV';
-  host: string;
-  sharePath: string;
-  username?: string;
-  password?: string;
-  autoSync: boolean;
-  lastTested?: string;
-  testStatus?: 'OK' | 'FAILED' | 'UNTESTED';
-  testMessage?: string;
+export interface SystemInfo {
+  version: string;
+  edition: string;
+  architecture: string;
+  storageMode: string;
+  storageDirectory: string;
+  updateStatus: string;
+}
+
+export interface StorageInfo {
+  storageDirectory: string;
+  databasePath: string;
+  databaseSizeBytes: number;
+  totalLetters: number;
 }
 
 export class SettingsService {
   private readonly repository: ILetterRepository;
   private readonly storageService: LocalStorageService;
   private readonly dbPath: string;
-  private readonly configFile: string;
 
   constructor(repository: ILetterRepository, storageService: LocalStorageService, dbPath: string) {
     this.repository = repository;
     this.storageService = storageService;
     this.dbPath = dbPath;
-    this.configFile = path.join(path.dirname(dbPath), 'settings.json');
   }
 
-  public getNasConfig(): NasConfig {
-    try {
-      if (fs.existsSync(this.configFile)) {
-        const raw = fs.readFileSync(this.configFile, 'utf-8');
-        const data = JSON.parse(raw);
-        if (data.nas) return data.nas;
-      }
-    } catch (err) {
-      console.warn('Could not read settings.json:', err);
-    }
-
-    // Default configuration template for NAS
+  public getSystemInfo(): SystemInfo {
     return {
-      enabled: false,
-      protocol: 'MOUNTED_PATH',
-      host: '',
-      sharePath: 'Z:\\LetterPort_NAS_Archive',
-      username: '',
-      password: '',
-      autoSync: false,
-      testStatus: 'UNTESTED',
-      testMessage: 'NAS not configured yet.'
+      version: 'v1.2.0',
+      edition: 'Plug-and-Play Zero-Config NAS Edition',
+      architecture: 'Self-Contained Container Volumes',
+      storageMode: 'Internal Docker Volume (/app/documents)',
+      storageDirectory: this.storageService.getAbsolutePath(''),
+      updateStatus: 'Up to date'
     };
   }
 
-  public saveNasConfig(config: NasConfig): NasConfig {
-    let allSettings: any = {};
+  public async getStorageInfo(): Promise<StorageInfo> {
+    const stats = await this.repository.getStats();
+
+    let dbSizeBytes = 0;
     try {
-      if (fs.existsSync(this.configFile)) {
-        allSettings = JSON.parse(fs.readFileSync(this.configFile, 'utf-8'));
+      if (fs.existsSync(this.dbPath)) {
+        dbSizeBytes = fs.statSync(this.dbPath).size;
       }
     } catch {}
 
-    allSettings.nas = {
-      ...config,
-      updatedAt: new Date().toISOString()
+    return {
+      storageDirectory: this.storageService.getAbsolutePath(''),
+      databasePath: this.dbPath,
+      databaseSizeBytes: dbSizeBytes,
+      totalLetters: stats.totalLetters
     };
-
-    fs.writeFileSync(this.configFile, JSON.stringify(allSettings, null, 2), 'utf-8');
-    return allSettings.nas;
-  }
-
-  public async testNasConnection(config: NasConfig): Promise<{ success: boolean; message: string }> {
-    const sharePath = config.sharePath?.trim();
-    if (!sharePath) {
-      return { success: false, message: 'Please enter a valid NAS path or network share folder.' };
-    }
-
-    try {
-      // 1. Check if path exists or can be accessed
-      if (fs.existsSync(sharePath)) {
-        // Test write permission
-        const testFile = path.join(sharePath, `.letterport-nas-test-${Date.now()}.tmp`);
-        await fs.promises.writeFile(testFile, 'LetterPort NAS Connection Test');
-        await fs.promises.unlink(testFile);
-
-        config.testStatus = 'OK';
-        config.lastTested = new Date().toISOString();
-        config.testMessage = `Successfully connected! Storage path is writable: ${sharePath}`;
-        this.saveNasConfig(config);
-
-        return { success: true, message: config.testMessage };
-      } else {
-        // If it is a UNC path (e.g. \\192.168.1.50\letters) or drive letter not mounted
-        if (sharePath.startsWith('\\\\')) {
-          config.testStatus = 'FAILED';
-          config.lastTested = new Date().toISOString();
-          config.testMessage = `Network path ${sharePath} is reachable on network or requires mounted credentials. Ensure the folder is shared with read/write permissions.`;
-          this.saveNasConfig(config);
-
-          return {
-            success: false,
-            message: `Network path cannot be opened directly. If using Windows, please map the network drive (e.g. Z:) or verify SMB credentials.`
-          };
-        }
-
-        config.testStatus = 'FAILED';
-        config.lastTested = new Date().toISOString();
-        config.testMessage = `Folder does not exist or is not mounted: ${sharePath}`;
-        this.saveNasConfig(config);
-
-        return { success: false, message: `Folder does not exist or is not currently mounted: ${sharePath}` };
-      }
-    } catch (err: any) {
-      config.testStatus = 'FAILED';
-      config.lastTested = new Date().toISOString();
-      config.testMessage = `Connection error: ${err.message}`;
-      this.saveNasConfig(config);
-
-      return { success: false, message: `Permission or network error: ${err.message}` };
-    }
   }
 
   public async loadSampleData(): Promise<{ count: number }> {
@@ -203,7 +140,6 @@ export class SettingsService {
     let insertedCount = 0;
 
     for (const sample of samples) {
-      // Check if letter already exists
       const existing = await this.repository.getLetterByReferenceNumber(sample.referenceNumber);
       if (existing) continue;
 
@@ -290,27 +226,5 @@ export class SettingsService {
     }
 
     return { deleted: deletedCount };
-  }
-
-  public async getStorageInfo(): Promise<any> {
-    const stats = await this.repository.getStats();
-    const nas = this.getNasConfig();
-
-    let dbSizeBytes = 0;
-    try {
-      if (fs.existsSync(this.dbPath)) {
-        dbSizeBytes = fs.statSync(this.dbPath).size;
-      }
-    } catch {}
-
-    return {
-      storageDirectory: this.storageService.getAbsolutePath(''),
-      databasePath: this.dbPath,
-      databaseSizeBytes: dbSizeBytes,
-      totalLetters: stats.totalLetters,
-      nasConfigured: nas.enabled,
-      nasPath: nas.sharePath,
-      nasStatus: nas.testStatus || 'UNTESTED'
-    };
   }
 }

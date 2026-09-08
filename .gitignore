@@ -25,6 +25,8 @@ build/
 data/*.db
 data/*.sqlite
 pb_data/
+db_data/
+letterport_data/
 
 # Uploaded correspondence files (keep directory, ignore contents)
 uploads/*

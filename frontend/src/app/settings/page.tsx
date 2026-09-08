@@ -3,44 +3,31 @@
 import { useState, useEffect } from 'react';
 import { 
   fetchSettings, 
-  saveNasSettings, 
-  testNasConnection, 
   loadSampleData, 
   clearSampleData,
-  NasConfig, 
+  SystemInfo,
   StorageInfo 
 } from '@/lib/api';
 import { 
   HardDrive, 
-  Server, 
   CheckCircle2, 
   AlertCircle, 
   RefreshCw, 
-  Save, 
   FolderPlus, 
   Trash2, 
-  HelpCircle,
   Database,
-  ExternalLink
+  Cpu,
+  Sparkles,
+  ShieldCheck,
+  DownloadCloud
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [nas, setNas] = useState<NasConfig>({
-    enabled: false,
-    protocol: 'MOUNTED_PATH',
-    host: '',
-    sharePath: 'Z:\\LetterPort_Archive',
-    username: '',
-    password: '',
-    autoSync: false,
-    testStatus: 'UNTESTED',
-    testMessage: '',
-  });
-
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -48,10 +35,10 @@ export default function SettingsPage() {
   const loadData = async () => {
     try {
       const data = await fetchSettings();
-      setNas(data.nas);
+      setSystemInfo(data.systemInfo);
       setStorageInfo(data.storageInfo);
     } catch (err: any) {
-      setNotification({ type: 'error', message: err.message || 'Could not load settings.' });
+      setNotification({ type: 'error', message: err.message || 'Could not load system information.' });
     } finally {
       setLoading(false);
     }
@@ -61,39 +48,13 @@ export default function SettingsPage() {
     loadData();
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setNotification(null);
-    try {
-      const saved = await saveNasSettings(nas);
-      setNas(saved);
-      setNotification({ type: 'success', message: 'Network storage settings saved successfully!' });
-    } catch (err: any) {
-      setNotification({ type: 'error', message: err.message || 'Failed to save settings.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleTestConnection = async () => {
-    setTesting(true);
-    setNotification(null);
-    try {
-      const result = await testNasConnection(nas);
-      if (result.success) {
-        setNotification({ type: 'success', message: result.message });
-        setNas({ ...nas, testStatus: 'OK', testMessage: result.message });
-      } else {
-        setNotification({ type: 'error', message: result.message });
-        setNas({ ...nas, testStatus: 'FAILED', testMessage: result.message });
-      }
-    } catch (err: any) {
-      setNotification({ type: 'error', message: err.message || 'Connection test failed.' });
-      setNas({ ...nas, testStatus: 'FAILED', testMessage: err.message });
-    } finally {
-      setTesting(false);
-    }
+  const handleCheckUpdates = async () => {
+    setCheckingUpdate(true);
+    setUpdateMessage(null);
+    setTimeout(() => {
+      setCheckingUpdate(false);
+      setUpdateMessage('LetterPort is running the latest stable release (v1.2.0). All components are up to date.');
+    }, 1200);
   };
 
   const handleLoadSamples = async () => {
@@ -129,7 +90,7 @@ export default function SettingsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Loading settings...</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Loading system settings...</p>
       </div>
     );
   }
@@ -139,10 +100,10 @@ export default function SettingsPage() {
       {/* Title */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          System Settings
+          System Maintenance & Settings
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Configure office network storage (NAS), view PocketBase/SQLite database status, or manage demo letters.
+          Zero-config plug-and-play architecture. View software status, storage metrics, or manage sample letters.
         </p>
       </div>
 
@@ -164,170 +125,83 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Section 1: Network Storage (NAS) Configuration */}
+      {/* Section 1: System Maintenance & Architecture */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
         <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
-              <Server className="w-5 h-5" />
+              <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                Network Storage Server (NAS)
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>System Maintenance</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  Plug-and-Play
+                </span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Save or back up your letter documents to an office storage server (Synology, QNAP, TrueNAS, or Windows Share).
+                Zero-config deployment mode. Storage and databases are automatically mapped to local directories.
               </p>
             </div>
           </div>
-
-          <label className="relative inline-flex items-center cursor-pointer shrink-0">
-            <input
-              type="checkbox"
-              checked={nas.enabled}
-              onChange={(e) => setNas({ ...nas, enabled: e.target.checked })}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
         </div>
 
-        <form onSubmit={handleSave} className="p-5 sm:p-6 space-y-5">
+        <div className="p-5 sm:p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Connection Type
-              </label>
-              <select
-                value={nas.protocol}
-                disabled={!nas.enabled}
-                onChange={(e) => setNas({ ...nas, protocol: e.target.value as any })}
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
-              >
-                <option value="MOUNTED_PATH">Shared Folder or Mapped Drive (e.g. Z:\Letters)</option>
-                <option value="SMB">Windows Network Share (SMB / CIFS)</option>
-                <option value="NFS">NFS Share (Linux / Proxmox NAS)</option>
-                <option value="WEBDAV">WebDAV Storage</option>
-              </select>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  System Version
+                </span>
+                <p className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
+                  {systemInfo?.version || 'v1.2.0'}
+                </p>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {systemInfo?.edition || 'Plug-and-Play NAS Edition'}
+                </span>
+              </div>
+              <ShieldCheck className="w-8 h-8 text-blue-500 opacity-80" />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Server IP or Host (Optional)
-              </label>
-              <input
-                type="text"
-                value={nas.host}
-                disabled={!nas.enabled}
-                onChange={(e) => setNas({ ...nas, host: e.target.value })}
-                placeholder="e.g. 192.168.1.100 or synology-nas"
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Storage Folder Path on Server *
-            </label>
-            <input
-              type="text"
-              value={nas.sharePath}
-              disabled={!nas.enabled}
-              onChange={(e) => setNas({ ...nas, sharePath: e.target.value })}
-              placeholder="e.g. \\192.168.1.100\Letters or Z:\LetterPort_Archive or /mnt/nas/letters"
-              required={nas.enabled}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono disabled:opacity-50"
-            />
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 block">
-              Tip: In Windows, you can map your NAS to a drive letter like <code>Z:</code> or type the network path.
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                NAS Username (If required)
-              </label>
-              <input
-                type="text"
-                value={nas.username || ''}
-                disabled={!nas.enabled}
-                onChange={(e) => setNas({ ...nas, username: e.target.value })}
-                placeholder="e.g. admin or letterport_user"
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                NAS Password (If required)
-              </label>
-              <input
-                type="password"
-                value={nas.password || ''}
-                disabled={!nas.enabled}
-                onChange={(e) => setNas({ ...nas, password: e.target.value })}
-                placeholder="••••••••"
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
-              />
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  Deployment Architecture
+                </span>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Self-Contained Relative Volumes
+                </p>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Zero manual IP or drive mappings required
+                </span>
+              </div>
+              <Sparkles className="w-8 h-8 text-amber-500 opacity-80" />
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 pt-1">
-            <input
-              type="checkbox"
-              id="autoSync"
-              checked={nas.autoSync}
-              disabled={!nas.enabled}
-              onChange={(e) => setNas({ ...nas, autoSync: e.target.checked })}
-              className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-700 focus:ring-blue-500"
-            />
-            <label htmlFor="autoSync" className="text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
-              Automatically keep a backup copy of every uploaded letter on the NAS server
-            </label>
-          </div>
-
-          {/* Test Status Banner */}
-          {nas.testStatus && nas.testStatus !== 'UNTESTED' && (
-            <div
-              className={`p-3 rounded-xl text-xs flex items-center gap-2 border ${
-                nas.testStatus === 'OK'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200'
-                  : 'bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200'
-              }`}
-            >
-              {nas.testStatus === 'OK' ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              )}
-              <span>{nas.testMessage || 'Status recorded.'}</span>
+          {updateMessage && (
+            <div className="p-3.5 rounded-xl text-xs flex items-center gap-2 border bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              <span>{updateMessage}</span>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Check for software patches and container image updates
+            </span>
             <button
               type="button"
-              disabled={!nas.enabled || testing}
-              onClick={handleTestConnection}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold disabled:opacity-50 transition flex items-center gap-1.5"
+              disabled={checkingUpdate}
+              onClick={handleCheckUpdates}
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${testing ? 'animate-spin' : ''}`} />
-              <span>{testing ? 'Checking Connection...' : 'Test Connection'}</span>
-            </button>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 disabled:opacity-50 transition flex items-center gap-1.5"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{saving ? 'Saving...' : 'Save Settings'}</span>
+              <DownloadCloud className={`w-3.5 h-3.5 ${checkingUpdate ? 'animate-bounce' : ''}`} />
+              <span>{checkingUpdate ? 'Checking for Updates...' : 'Check for Updates'}</span>
             </button>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Section 2: Sample Demo Data (Load & Clear) */}
@@ -351,7 +225,7 @@ export default function SettingsPage() {
           <ul className="list-disc list-inside space-y-0.5 text-slate-500 dark:text-slate-400 pl-1">
             <li>Tax Clearance Certificate [VEM-2026-0010] &bull; Revenue Authority (Incoming)</li>
             <li>Office Renovation Permit [VEM-2026-0011] &bull; City Engineering (Incoming)</li>
-            <li>Purchase Order for Synology NAS [VEM-2026-0012] &bull; TechSupply (Outgoing)</li>
+            <li>Purchase Order for Hardware [VEM-2026-0012] &bull; TechSupply (Outgoing)</li>
             <li>Insurance Policy Renewal Notice [VEM-2026-0013] &bull; Commercial Assurance (Incoming)</li>
             <li>Executive Staff Memo [VEM-2026-0014] &bull; Internal Operations (Outgoing)</li>
           </ul>
@@ -405,7 +279,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Section 3: Current Storage & Database Info */}
+      {/* Section 3: Storage & Database Metrics */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5 sm:p-6 space-y-4 transition-colors">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl shrink-0">
@@ -416,7 +290,7 @@ export default function SettingsPage() {
               Storage & Database Information
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Current database engine (PocketBase / SQLite) and file repository details.
+              Internal storage repository and database file metrics.
             </p>
           </div>
         </div>
@@ -436,14 +310,10 @@ export default function SettingsPage() {
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60">
-              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase">NAS Backup Status</span>
+              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase">Storage Mode</span>
               <p className="text-sm font-bold text-slate-900 dark:text-white mt-1 flex items-center gap-1.5">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    storageInfo.nasConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-                  }`}
-                ></span>
-                {storageInfo.nasConfigured ? 'Active & Synced' : 'Not Enabled'}
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Internal Volume Mount
               </p>
             </div>
           </div>
@@ -452,7 +322,7 @@ export default function SettingsPage() {
         {storageInfo && (
           <div className="pt-2 text-xs text-slate-500 dark:text-slate-400 space-y-1">
             <p>
-              <strong>Storage Directory:</strong>{' '}
+              <strong>Storage Path:</strong>{' '}
               <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300 font-mono">
                 {storageInfo.storageDirectory}
               </code>

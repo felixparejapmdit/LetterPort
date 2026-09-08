@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   nginx:
     build:
@@ -16,7 +14,7 @@ services:
     networks:
       - lms-network
     volumes:
-      - storage_volume:/app/uploads:ro
+      - ./letterport_data:/app/documents:ro
 
   web:
     build:
@@ -44,9 +42,9 @@ services:
       - QUEUE_TYPE=redis
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - STORAGE_DIR=/app/uploads
+      - STORAGE_DIR=/app/documents
     volumes:
-      - storage_volume:/app/uploads
+      - ./letterport_data:/app/documents
     depends_on:
       db:
         condition: service_healthy
@@ -67,9 +65,9 @@ services:
       - DATABASE_URL=postgresql://lms_user:lms_secure_pass@db:5432/letterport_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - STORAGE_DIR=/app/uploads
+      - STORAGE_DIR=/app/documents
     volumes:
-      - storage_volume:/app/uploads
+      - ./letterport_data:/app/documents
     depends_on:
       db:
         condition: service_healthy
@@ -87,12 +85,13 @@ services:
       - POSTGRES_PASSWORD=lms_secure_pass
       - POSTGRES_DB=letterport_db
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - ./db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lms_user -d letterport_db"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - lms-network
 
@@ -111,15 +110,10 @@ services:
     ports:
       - "8090:8090"
     volumes:
-      - pb_data:/pb_data
+      - ./pb_data:/pb_data
     networks:
       - lms-network
 
 networks:
   lms-network:
     driver: bridge
-
-volumes:
-  db_data:
-  storage_volume:
-  pb_data:

@@ -20,7 +20,7 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
-RUN mkdir -p /app/uploads /app/data
+RUN mkdir -p /app/documents /app/uploads /app/data
 
 EXPOSE 5000
 

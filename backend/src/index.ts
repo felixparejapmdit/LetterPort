@@ -24,7 +24,12 @@ dotenv.config();
 
 const PORT = parseInt(process.env.PORT || '5001', 10);
 const DB_PATH = path.resolve(process.env.DATABASE_FILE || './data/letterport.db');
-const STORAGE_DIR = path.resolve(process.env.STORAGE_DIR || './uploads');
+// Zero-Config file storage: /app/documents inside Docker, ./letterport_data for local development
+const STORAGE_DIR = process.env.STORAGE_DIR
+  ? path.resolve(process.env.STORAGE_DIR)
+  : fs.existsSync('/app/documents')
+    ? '/app/documents'
+    : path.resolve('./letterport_data');
 const DB_TYPE = process.env.DATABASE_TYPE || 'sqlite';
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090';
 
@@ -88,8 +93,9 @@ async function bootstrap() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Static uploads serving if needed
+  // Static uploads & documents serving if needed
   app.use('/uploads', express.static(STORAGE_DIR));
+  app.use('/documents', express.static(STORAGE_DIR));
 
   // Health check endpoint
   app.get('/health', (_req, res) => {

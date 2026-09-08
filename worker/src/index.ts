@@ -7,7 +7,11 @@ import { createWorker } from 'tesseract.js';
 dotenv.config();
 
 const DB_PATH = path.resolve(process.env.DATABASE_FILE || '../backend/data/letterport.db');
-const STORAGE_DIR = path.resolve(process.env.STORAGE_DIR || '../backend/uploads');
+const STORAGE_DIR = process.env.STORAGE_DIR
+  ? path.resolve(process.env.STORAGE_DIR)
+  : fs.existsSync('/app/documents')
+    ? '/app/documents'
+    : path.resolve('../letterport_data');
 const OCR_LANG = process.env.OCR_LANGUAGE || 'eng';
 const POLL_INTERVAL_MS = 3000;
 

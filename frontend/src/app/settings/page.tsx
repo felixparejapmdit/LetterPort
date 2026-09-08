@@ -5,6 +5,8 @@ import {
   fetchSettings, 
   loadSampleData, 
   clearSampleData,
+  getBackupUrl,
+  restoreBackup,
   SystemInfo,
   StorageInfo 
 } from '@/lib/api';
@@ -19,7 +21,11 @@ import {
   Cpu,
   Sparkles,
   ShieldCheck,
-  DownloadCloud
+  DownloadCloud,
+  Download,
+  Upload,
+  FileJson,
+  Archive
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -83,6 +89,26 @@ export default function SettingsPage() {
       setNotification({ type: 'error', message: err.message || 'Failed to clear letters.' });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleRestoreFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setActionLoading('restore');
+      setNotification(null);
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const res = await restoreBackup(json);
+      setNotification({ type: 'success', message: res.message || `Successfully restored ${res.restored} letters!` });
+      await loadData();
+    } catch (err: any) {
+      setNotification({ type: 'error', message: err.message || 'Failed to restore backup file.' });
+    } finally {
+      setActionLoading(null);
+      e.target.value = '';
     }
   };
 
@@ -246,6 +272,17 @@ export default function SettingsPage() {
             <span>Load Sample Letters</span>
           </button>
 
+          {/* Backup Letters button (matches Sample Letters card) */}
+          <a
+            href={getBackupUrl()}
+            download
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition flex items-center gap-2"
+            title="Download complete letters backup JSON"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Backup Letters</span>
+          </a>
+
           {showClearConfirm ? (
             <div className="flex items-center space-x-2 bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-900 p-1.5 rounded-xl">
               <span className="text-xs text-rose-800 dark:text-rose-200 font-bold px-2">Delete all letters?</span>
@@ -276,6 +313,79 @@ export default function SettingsPage() {
               <span>Clear All Letters</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Section: Letters Backup & Safety */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5 sm:p-6 space-y-4 transition-colors">
+        <div className="flex items-center space-x-3">
+          <div className="p-2.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
+            <Archive className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Letters Backup & Safe Recovery
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Safeguard all registered letters, VEM tracking numbers, and OCR extracted texts in a portable backup file.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          {/* Export / Download Backup */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs">
+                <FileJson className="w-4 h-4 text-blue-500" />
+                <span>Export Letters Backup</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Downloads a complete JSON package of all letters, attachments index, and OCR text.
+              </p>
+            </div>
+            <a
+              href={getBackupUrl()}
+              download
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download Backup (.json)</span>
+            </a>
+          </div>
+
+          {/* Import / Restore Backup */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs">
+                <Upload className="w-4 h-4 text-emerald-500" />
+                <span>Restore Letters from Backup</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Upload a previously saved LetterPort JSON backup file to restore records.
+              </p>
+            </div>
+            <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold cursor-pointer transition">
+              {actionLoading === 'restore' ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                  <span>Restoring letters...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Select Backup File (.json)</span>
+                </>
+              )}
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={handleRestoreFile}
+                disabled={actionLoading !== null}
+                className="hidden"
+              />
+            </label>
+          </div>
         </div>
       </div>
 

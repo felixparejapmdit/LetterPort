@@ -19,8 +19,10 @@ import {
   Pencil,
   Download,
   AlertTriangle,
+  Activity,
   X
 } from 'lucide-react';
+import TrackingModal from '@/components/TrackingModal';
 
 function LettersContent() {
   const searchParams = useSearchParams();
@@ -38,8 +40,9 @@ function LettersContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Edit Modal State
+  // Modal States
   const [editingLetter, setEditingLetter] = useState<Letter | null>(null);
+  const [trackingLetter, setTrackingLetter] = useState<Letter | null>(null);
 
   // Sync state when URL query changes (e.g. clicking dashboard links)
   useEffect(() => {
@@ -311,6 +314,16 @@ function LettersContent() {
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                       <div className="inline-flex items-center space-x-1.5">
+                        {/* Track Letter Status */}
+                        <button
+                          onClick={() => setTrackingLetter(l)}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white transition shadow-2xs"
+                          title={`Track status for ${l.referenceNumber}`}
+                          aria-label={`Track status for ${l.referenceNumber}`}
+                        >
+                          <Activity className="w-3.5 h-3.5" />
+                        </button>
+
                         {/* Download File */}
                         <a
                           href={getDownloadUrl(l.id)}
@@ -332,12 +345,12 @@ function LettersContent() {
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* View & Track */}
+                        {/* View Details */}
                         <Link
                           href={`/letters/${l.id}`}
                           className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition shadow-2xs"
-                          title={`Track and view ${l.referenceNumber}`}
-                          aria-label={`Track and view ${l.referenceNumber}`}
+                          title={`View details for ${l.referenceNumber}`}
+                          aria-label={`View details for ${l.referenceNumber}`}
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
@@ -388,6 +401,13 @@ function LettersContent() {
           }}
         />
       )}
+
+      {/* Tracking Modal */}
+      <TrackingModal
+        isOpen={!!trackingLetter}
+        letter={trackingLetter}
+        onClose={() => setTrackingLetter(null)}
+      />
     </div>
   );
 }

@@ -227,4 +227,117 @@ export class SettingsService {
 
     return { deleted: deletedCount };
   }
+
+  public async exportBackup(): Promise<{
+    version: string;
+    exportDate: string;
+    totalLetters: number;
+    letters: Array<{
+      letter: any;
+      attachments: any[];
+      ocrRecord: any | null;
+    }>;
+  }> {
+    const { letters } = await this.repository.findLetters({ limit: 10000 });
+    const fullLetters = await Promise.all(
+      letters.map(async (letter) => {
+        const attachments = await this.repository.getAttachmentsByLetterId(letter.id);
+        const ocrRecord = await this.repository.getOCRRecordByLetterId(letter.id);
+        return {
+          letter: letter.toJSON(),
+          attachments: attachments.map(a => a.toJSON()),
+          ocrRecord: ocrRecord ? ocrRecord.toJSON() : null
+        };
+      })
+    );
+
+    return {
+      version: 'v1.2.0',
+      exportDate: new Date().toISOString(),
+      totalLetters: fullLetters.length,
+      letters: fullLetters
+    };
+  }
+
+  public async restoreBackup(backupData: any): Promise<{ restored: number }> {
+    if (!backupData || !Array.isArray(backupData.letters)) {
+      throw new Error('Invalid backup file structure: missing letters array');
+    }
+
+    let count = 0;
+    for (const item of backupData.letters) {
+      const letterData = item.letter || item;
+      if (!letterData || !letterData.id || !letterData.referenceNumber) continue;
+
+      const existing = await this.repository.getLetterById(letterData.id);
+      const letter = new Letter({
+        id: letterData.id,
+        referenceNumber: letterData.referenceNumber,
+        vemNumber: letterData.vemNumber || null,
+        type: letterData.type,
+        sender: letterData.sender,
+        recipient: letterData.recipient,
+        subject: letterData.subject,
+        letterDate: letterData.letterDate,
+        receivedSentDate: letterData.receivedSentDate,
+        status: letterData.status,
+        priority: letterData.priority || 'MEDIUM',
+        tags: Array.isArray(letterData.tags) ? letterData.tags : [],
+        createdAt: letterData.createdAt,
+        updatedAt: letterData.updatedAt
+      });
+
+      if (existing) {
+        await this.repository.updateLetter(letter);
+      } else {
+        await this.repository.saveLetter(letter);
+      }
+
+      // Restore attachments
+      if (Array.isArray(item.attachments)) {
+        for (const attData of item.attachments) {
+          const existingAtt = await this.repository.getAttachmentById(attData.id);
+          if (!existingAtt) {
+            const attachment = new Attachment({
+              id: attData.id,
+              letterId: letter.id,
+              storedFilename: attData.storedFilename || attData.fileName || 'document',
+              originalName: attData.originalName || 'document',
+              mimeType: attData.mimeType || 'application/pdf',
+              fileSize: attData.fileSize ?? attData.fileSizeBytes ?? 0,
+              filePath: attData.filePath || '',
+              checksum: attData.checksum || '',
+              createdAt: attData.createdAt
+            });
+            await this.repository.saveAttachment(attachment);
+          }
+        }
+      }
+
+      // Restore OCR record
+      if (item.ocrRecord) {
+        const existingOCR = await this.repository.getOCRRecordByLetterId(letter.id);
+        const ocr = new OCRRecord({
+          id: item.ocrRecord.id || uuidv4(),
+          letterId: letter.id,
+          attachmentId: item.ocrRecord.attachmentId || letter.id,
+          extractedText: item.ocrRecord.extractedText || '',
+          confidence: item.ocrRecord.confidence || 95,
+          pageCount: item.ocrRecord.pageCount || 1,
+          status: item.ocrRecord.status || 'COMPLETED',
+          processedAt: item.ocrRecord.processedAt || new Date().toISOString()
+        });
+
+        if (existingOCR) {
+          await this.repository.updateOCRRecord(ocr);
+        } else {
+          await this.repository.saveOCRRecord(ocr);
+        }
+      }
+
+      count++;
+    }
+
+    return { restored: count };
+  }
 }

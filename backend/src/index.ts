@@ -22,7 +22,7 @@ import { errorHandler } from './middleware/errorHandler';
 // Load environment variables
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '5001', 10);
+const PORT = parseInt(process.env.PORT || '8766', 10);
 const DB_PATH = path.resolve(process.env.DATABASE_FILE || './data/letterport.db');
 // Zero-Config file storage: /app/documents inside Docker, ./letterport_data for local development
 const STORAGE_DIR = process.env.STORAGE_DIR

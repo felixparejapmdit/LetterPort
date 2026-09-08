@@ -64,4 +64,31 @@ export class SettingsController {
       next(err);
     }
   };
+
+  public exportBackup = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const backup = await this.settingsService.exportBackup();
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `letterport-backup-${dateStr}.json`;
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.status(200).send(JSON.stringify(backup, null, 2));
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public restoreBackup = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.settingsService.restoreBackup(req.body);
+      res.status(200).json({
+        success: true,
+        message: `Successfully restored ${result.restored} letters from backup.`,
+        data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

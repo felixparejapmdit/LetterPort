@@ -10,6 +10,8 @@ import {
   Letter 
 } from '@/lib/api';
 import { StatusBadge, PriorityBadge, TypeBadge } from '@/components/StatusBadge';
+import EditLetterModal from '@/components/EditLetterModal';
+import TrackingModal from '@/components/TrackingModal';
 import { 
   Inbox, 
   Send, 
@@ -23,7 +25,9 @@ import {
   FolderOpen,
   Eye,
   Hash,
-  Download
+  Download,
+  Pencil,
+  Activity
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -31,6 +35,8 @@ export default function DashboardPage() {
   const [recentLetters, setRecentLetters] = useState<Letter[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [editingLetter, setEditingLetter] = useState<Letter | null>(null);
+  const [trackingLetter, setTrackingLetter] = useState<Letter | null>(null);
 
   const loadData = async () => {
     try {
@@ -358,6 +364,16 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                       <div className="inline-flex items-center space-x-1.5">
+                        {/* Track Letter Status */}
+                        <button
+                          onClick={() => setTrackingLetter(l)}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white transition shadow-2xs"
+                          title={`Track status for ${l.referenceNumber}`}
+                          aria-label={`Track status for ${l.referenceNumber}`}
+                        >
+                          <Activity className="w-3.5 h-3.5" />
+                        </button>
+
                         {/* Download Document */}
                         <a
                           href={getDownloadUrl(l.id)}
@@ -369,12 +385,22 @@ export default function DashboardPage() {
                           <Download className="w-3.5 h-3.5" />
                         </a>
 
-                        {/* View & Track */}
+                        {/* Edit Letter */}
+                        <button
+                          onClick={() => setEditingLetter(l)}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition shadow-2xs"
+                          title={`Edit letter ${l.referenceNumber}`}
+                          aria-label={`Edit letter ${l.referenceNumber}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* View Details */}
                         <Link
                           href={`/letters/${l.id}`}
                           className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition shadow-2xs"
-                          title={`Track and view letter ${l.referenceNumber}`}
-                          aria-label={`Track and view letter ${l.referenceNumber}`}
+                          title={`View details for ${l.referenceNumber}`}
+                          aria-label={`View details for ${l.referenceNumber}`}
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
@@ -387,6 +413,24 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Letter Modal */}
+      <EditLetterModal
+        isOpen={!!editingLetter}
+        letter={editingLetter}
+        onClose={() => setEditingLetter(null)}
+        onSaved={() => {
+          setEditingLetter(null);
+          loadData();
+        }}
+      />
+
+      {/* Tracking Modal */}
+      <TrackingModal
+        isOpen={!!trackingLetter}
+        letter={trackingLetter}
+        onClose={() => setTrackingLetter(null)}
+      />
     </div>
   );
 }

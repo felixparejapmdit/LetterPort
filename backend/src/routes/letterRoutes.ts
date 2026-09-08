@@ -21,6 +21,8 @@ export function createLetterRoutes(
   router.get('/settings/storage-info', settingsController.getStorageInfo);
   router.post('/settings/sample-data/load', settingsController.loadSampleData);
   router.post('/settings/sample-data/clear', settingsController.clearSampleData);
+  router.get('/settings/backup', settingsController.exportBackup);
+  router.post('/settings/restore', settingsController.restoreBackup);
 
   // Full-Text Search
   router.get('/search', searchController.search);

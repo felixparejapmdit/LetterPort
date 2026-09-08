@@ -219,3 +219,21 @@ export function getFileUrl(letterId: string): string {
 export function getDownloadUrl(letterId: string): string {
   return `${API_BASE}/letters/${letterId}/download`;
 }
+
+export function getBackupUrl(): string {
+  return `${API_BASE}/settings/backup`;
+}
+
+export async function restoreBackup(backupData: any): Promise<{ restored: number; message: string }> {
+  const res = await fetch(`${API_BASE}/settings/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(backupData),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json.message || 'Failed to restore backup');
+  }
+  const json = await res.json();
+  return { restored: json.data?.restored || 0, message: json.message };
+}

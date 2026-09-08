@@ -47,7 +47,7 @@ The script will automatically:
 2. Initialize local storage folders (`./letterport_data` and `./db_data`).
 3. Set appropriate file permissions.
 4. Build and boot all containers in detached mode.
-5. Display your local network URL (e.g. `http://192.168.1.150:3001` or `http://192.168.1.150`).
+5. Display your local network URL (e.g. `http://192.168.1.150:8765`).
 
 ---
 
@@ -71,11 +71,7 @@ If you prefer using the Synology DSM web interface:
    - Click **Done**.
 5. Once started, open your web browser and go to:
    ```
-   http://<YOUR-SYNOLOGY-IP>:3001
-   ```
-   or
-   ```
-   http://<YOUR-SYNOLOGY-IP>
+   http://<YOUR-SYNOLOGY-IP>:8765
    ```
 
 ---
@@ -93,7 +89,7 @@ If you prefer using the Synology DSM web interface:
    - Click **Deploy**.
 5. Access LetterPort at:
    ```
-   http://<YOUR-QNAP-IP>:3001
+   http://<YOUR-QNAP-IP>:8765
    ```
 
 ---
@@ -111,7 +107,7 @@ If you manage containers using **Portainer**:
 5. Click **Deploy the stack**.
 6. Open your browser and navigate to:
    ```
-   http://<server-ip>:3001
+   http://<server-ip>:8765
    ```
 
 ---

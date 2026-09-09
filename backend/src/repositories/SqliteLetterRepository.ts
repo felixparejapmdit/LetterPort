@@ -6,7 +6,17 @@ import { Letter, LetterPriority, LetterStatus, LetterType } from '../entities/Le
 import { Attachment } from '../entities/Attachment';
 import { OCRRecord, OCRStatus } from '../entities/OCRRecord';
 import { User, UserRole } from '../entities/User';
-import { ILetterRepository, LetterFilter, SearchResult, DashboardStats } from './ILetterRepository';
+import { 
+  ILetterRepository, 
+  LetterFilter, 
+  SearchResult, 
+  DashboardStats,
+  Person,
+  ClassificationStatus,
+  ClassificationPriority,
+  ClassificationType,
+  RoleItem
+} from './ILetterRepository';
 
 export class SqliteLetterRepository implements ILetterRepository {
   private db!: sqlite3.Database;
@@ -84,6 +94,146 @@ export class SqliteLetterRepository implements ILetterRepository {
         value TEXT NOT NULL
       )
     `);
+
+    // People Directory Table
+    await this.run(`
+      CREATE TABLE IF NOT EXISTS people (
+        id TEXT PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL COLLATE NOCASE,
+        type TEXT DEFAULT 'contact',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // Classification: Statuses Table
+    await this.run(`
+      CREATE TABLE IF NOT EXISTS custom_statuses (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        label TEXT NOT NULL,
+        color TEXT NOT NULL DEFAULT 'blue',
+        description TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // Classification: Priorities Table
+    await this.run(`
+      CREATE TABLE IF NOT EXISTS custom_priorities (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        label TEXT NOT NULL,
+        color TEXT NOT NULL DEFAULT 'blue',
+        level INTEGER NOT NULL DEFAULT 1,
+        sla_days INTEGER NOT NULL DEFAULT 7,
+        description TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // Classification: Types Table
+    await this.run(`
+      CREATE TABLE IF NOT EXISTS custom_types (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        label TEXT NOT NULL,
+        prefix TEXT NOT NULL,
+        description TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // User Roles Table
+    await this.run(`
+      CREATE TABLE IF NOT EXISTS custom_roles (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        color TEXT NOT NULL DEFAULT 'blue',
+        is_system INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // Seed default roles if empty
+    const roleCount = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM custom_roles`);
+    if (!roleCount || roleCount.count === 0) {
+      const now = new Date().toISOString();
+      await this.run(
+        `INSERT INTO custom_roles (id, code, name, description, color, is_system, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), 'admin', 'System Administrator', 'Full administrative authority across all modules and settings', 'blue', 1, now, now]
+      );
+      await this.run(
+        `INSERT INTO custom_roles (id, code, name, description, color, is_system, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), 'user', 'Staff Member', 'Operational role for drafting, encoding, reviewing, and tracking letters', 'emerald', 1, now, now]
+      );
+    }
+
+    // Seed default statuses if empty
+    const statusCount = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM custom_statuses`);
+    if (!statusCount || statusCount.count === 0) {
+      const now = new Date().toISOString();
+      const defaultStatuses = [
+        { code: 'DRAFT', label: 'Draft', color: 'slate', desc: 'Initial draft, pending submission or verification', order: 1 },
+        { code: 'RECEIVED', label: 'Received', color: 'blue', desc: 'Officially received letter awaiting action', order: 2 },
+        { code: 'UNDER_REVIEW', label: 'In Review', color: 'amber', desc: 'Under review by authorized personnel or department', order: 3 },
+        { code: 'PROCESSED', label: 'Completed', color: 'emerald', desc: 'Processed, resolved, and completed', order: 4 },
+        { code: 'ARCHIVED', label: 'Archived', color: 'purple', desc: 'Permanently archived in repository', order: 5 }
+      ];
+      for (const s of defaultStatuses) {
+        await this.run(
+          `INSERT INTO custom_statuses (id, code, label, color, description, is_active, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [uuidv4(), s.code, s.label, s.color, s.desc, 1, s.order, now, now]
+        );
+      }
+    }
+
+    // Seed default priorities if empty
+    const priorityCount = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM custom_priorities`);
+    if (!priorityCount || priorityCount.count === 0) {
+      const now = new Date().toISOString();
+      const defaultPriorities = [
+        { code: 'LOW', label: 'Low', color: 'slate', level: 1, sla: 10, desc: 'Standard non-urgent correspondence (10 days SLA)', order: 1 },
+        { code: 'MEDIUM', label: 'Normal', color: 'blue', level: 2, sla: 7, desc: 'Normal routine business communication (7 days SLA)', order: 2 },
+        { code: 'HIGH', label: 'High', color: 'amber', level: 3, sla: 5, desc: 'Important time-sensitive document (5 days SLA)', order: 3 },
+        { code: 'URGENT', label: 'Urgent', color: 'rose', level: 4, sla: 3, desc: 'Highest priority immediate action required (3 days SLA)', order: 4 }
+      ];
+      for (const p of defaultPriorities) {
+        await this.run(
+          `INSERT INTO custom_priorities (id, code, label, color, level, sla_days, description, is_active, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [uuidv4(), p.code, p.label, p.color, p.level, p.sla, p.desc, 1, p.order, now, now]
+        );
+      }
+    }
+
+    // Seed default letter types if empty
+    const typeCount = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM custom_types`);
+    if (!typeCount || typeCount.count === 0) {
+      const now = new Date().toISOString();
+      const defaultTypes = [
+        { code: 'INCOMING', label: 'Incoming', prefix: 'LP-IN', desc: 'Communications received from external parties', order: 1 },
+        { code: 'OUTGOING', label: 'Outgoing', prefix: 'LP-OUT', desc: 'Official letters dispatched to external recipients', order: 2 },
+        { code: 'INTERNAL', label: 'Internal', prefix: 'LP-INT', desc: 'Internal memoranda, circulars, and directives', order: 3 }
+      ];
+      for (const t of defaultTypes) {
+        await this.run(
+          `INSERT INTO custom_types (id, code, label, prefix, description, is_active, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [uuidv4(), t.code, t.label, t.prefix, t.desc, 1, t.order, now, now]
+        );
+      }
+    }
 
     // Seed default admin and user accounts if users table is empty
     const userCount = await this.get<{ count: number }>(`SELECT COUNT(*) as count FROM users`);
@@ -242,6 +392,10 @@ export class SqliteLetterRepository implements ILetterRepository {
         letter.updatedAt
       ]
     );
+
+    // Auto-save sender and recipient to people directory
+    if (letter.sender) this.savePerson(letter.sender, 'sender').catch(() => {});
+    if (letter.recipient) this.savePerson(letter.recipient, 'receiver').catch(() => {});
   }
 
   public async getLetterById(id: string): Promise<Letter | null> {
@@ -361,6 +515,10 @@ export class SqliteLetterRepository implements ILetterRepository {
         letter.id
       ]
     );
+
+    // Auto-save sender and recipient to people directory
+    if (letter.sender) this.savePerson(letter.sender, 'sender').catch(() => {});
+    if (letter.recipient) this.savePerson(letter.recipient, 'receiver').catch(() => {});
   }
 
   public async deleteLetter(id: string): Promise<void> {
@@ -718,5 +876,215 @@ export class SqliteLetterRepository implements ILetterRepository {
       `INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
       [key, value]
     );
+  }
+
+  // ==========================================
+  // People Directory Methods
+  // ==========================================
+  public async savePerson(name: string, type = 'contact'): Promise<Person> {
+    const trimmed = name.trim();
+    if (!trimmed) throw new Error('Person name cannot be empty');
+
+    const existing = await this.get<any>(`SELECT * FROM people WHERE LOWER(name) = LOWER(?)`, [trimmed]);
+    if (existing) {
+      return {
+        id: existing.id,
+        name: existing.name,
+        type: existing.type,
+        createdAt: existing.created_at,
+        updatedAt: existing.updated_at
+      };
+    }
+
+    const id = uuidv4();
+    const now = new Date().toISOString();
+    await this.run(
+      `INSERT INTO people (id, name, type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+      [id, trimmed, type, now, now]
+    );
+    return { id, name: trimmed, type, createdAt: now, updatedAt: now };
+  }
+
+  public async listPeople(search?: string): Promise<Person[]> {
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      const rows = await this.all<any>(
+        `SELECT * FROM people WHERE name LIKE ? ORDER BY name ASC LIMIT 50`,
+        [term]
+      );
+      return rows.map(r => ({ id: r.id, name: r.name, type: r.type, createdAt: r.created_at, updatedAt: r.updated_at }));
+    }
+    const rows = await this.all<any>(`SELECT * FROM people ORDER BY name ASC`);
+    return rows.map(r => ({ id: r.id, name: r.name, type: r.type, createdAt: r.created_at, updatedAt: r.updated_at }));
+  }
+
+  public async deletePerson(id: string): Promise<void> {
+    await this.run(`DELETE FROM people WHERE id = ?`, [id]);
+  }
+
+  // ==========================================
+  // Document Statuses Management
+  // ==========================================
+  public async listStatuses(): Promise<ClassificationStatus[]> {
+    const rows = await this.all<any>(`SELECT * FROM custom_statuses ORDER BY sort_order ASC, label ASC`);
+    return rows.map(r => ({
+      id: r.id,
+      code: r.code,
+      label: r.label,
+      color: r.color,
+      description: r.description || '',
+      isActive: Boolean(r.is_active),
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    }));
+  }
+
+  public async saveStatus(status: ClassificationStatus): Promise<void> {
+    const id = status.id || uuidv4();
+    const now = new Date().toISOString();
+    await this.run(
+      `INSERT INTO custom_statuses (id, code, label, color, description, is_active, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, status.code.toUpperCase().trim(), status.label.trim(), status.color || 'blue', status.description || '', status.isActive !== false ? 1 : 0, status.sortOrder || 0, now, now]
+    );
+  }
+
+  public async updateStatus(status: ClassificationStatus): Promise<void> {
+    const now = new Date().toISOString();
+    await this.run(
+      `UPDATE custom_statuses SET code = ?, label = ?, color = ?, description = ?, is_active = ?, sort_order = ?, updated_at = ? WHERE id = ?`,
+      [status.code.toUpperCase().trim(), status.label.trim(), status.color || 'blue', status.description || '', status.isActive ? 1 : 0, status.sortOrder || 0, now, status.id]
+    );
+  }
+
+  public async deleteStatus(id: string): Promise<void> {
+    await this.run(`DELETE FROM custom_statuses WHERE id = ?`, [id]);
+  }
+
+  // ==========================================
+  // Letter Priorities Management
+  // ==========================================
+  public async listPriorities(): Promise<ClassificationPriority[]> {
+    const rows = await this.all<any>(`SELECT * FROM custom_priorities ORDER BY level ASC, sort_order ASC`);
+    return rows.map(r => ({
+      id: r.id,
+      code: r.code,
+      label: r.label,
+      color: r.color,
+      level: r.level,
+      slaDays: r.sla_days,
+      description: r.description || '',
+      isActive: Boolean(r.is_active),
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    }));
+  }
+
+  public async savePriority(priority: ClassificationPriority): Promise<void> {
+    const id = priority.id || uuidv4();
+    const now = new Date().toISOString();
+    await this.run(
+      `INSERT INTO custom_priorities (id, code, label, color, level, sla_days, description, is_active, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, priority.code.toUpperCase().trim(), priority.label.trim(), priority.color || 'blue', priority.level || 1, priority.slaDays || 7, priority.description || '', priority.isActive !== false ? 1 : 0, priority.sortOrder || 0, now, now]
+    );
+  }
+
+  public async updatePriority(priority: ClassificationPriority): Promise<void> {
+    const now = new Date().toISOString();
+    await this.run(
+      `UPDATE custom_priorities SET code = ?, label = ?, color = ?, level = ?, sla_days = ?, description = ?, is_active = ?, sort_order = ?, updated_at = ? WHERE id = ?`,
+      [priority.code.toUpperCase().trim(), priority.label.trim(), priority.color || 'blue', priority.level || 1, priority.slaDays || 7, priority.description || '', priority.isActive ? 1 : 0, priority.sortOrder || 0, now, priority.id]
+    );
+  }
+
+  public async deletePriority(id: string): Promise<void> {
+    await this.run(`DELETE FROM custom_priorities WHERE id = ?`, [id]);
+  }
+
+  // ==========================================
+  // Letter Types Management
+  // ==========================================
+  public async listTypes(): Promise<ClassificationType[]> {
+    const rows = await this.all<any>(`SELECT * FROM custom_types ORDER BY sort_order ASC, label ASC`);
+    return rows.map(r => ({
+      id: r.id,
+      code: r.code,
+      label: r.label,
+      prefix: r.prefix,
+      description: r.description || '',
+      isActive: Boolean(r.is_active),
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    }));
+  }
+
+  public async saveType(type: ClassificationType): Promise<void> {
+    const id = type.id || uuidv4();
+    const now = new Date().toISOString();
+    await this.run(
+      `INSERT INTO custom_types (id, code, label, prefix, description, is_active, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, type.code.toUpperCase().trim(), type.label.trim(), type.prefix.toUpperCase().trim(), type.description || '', type.isActive !== false ? 1 : 0, type.sortOrder || 0, now, now]
+    );
+  }
+
+  public async updateType(type: ClassificationType): Promise<void> {
+    const now = new Date().toISOString();
+    await this.run(
+      `UPDATE custom_types SET code = ?, label = ?, prefix = ?, description = ?, is_active = ?, sort_order = ?, updated_at = ? WHERE id = ?`,
+      [type.code.toUpperCase().trim(), type.label.trim(), type.prefix.toUpperCase().trim(), type.description || '', type.isActive ? 1 : 0, type.sortOrder || 0, now, type.id]
+    );
+  }
+
+  public async deleteType(id: string): Promise<void> {
+    await this.run(`DELETE FROM custom_types WHERE id = ?`, [id]);
+  }
+
+  // ==========================================
+  // User Roles Management
+  // ==========================================
+  public async listRoles(): Promise<RoleItem[]> {
+    const rows = await this.all<any>(`SELECT * FROM custom_roles ORDER BY is_system DESC, name ASC`);
+    return rows.map(r => ({
+      id: r.id,
+      code: r.code,
+      name: r.name,
+      description: r.description || '',
+      color: r.color || 'blue',
+      isSystem: Boolean(r.is_system),
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    }));
+  }
+
+  public async saveRole(role: RoleItem): Promise<void> {
+    const id = role.id || uuidv4();
+    const now = new Date().toISOString();
+    await this.run(
+      `INSERT INTO custom_roles (id, code, name, description, color, is_system, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, role.code.toLowerCase().trim(), role.name.trim(), role.description || '', role.color || 'blue', role.isSystem ? 1 : 0, now, now]
+    );
+  }
+
+  public async updateRole(role: RoleItem): Promise<void> {
+    const now = new Date().toISOString();
+    await this.run(
+      `UPDATE custom_roles SET code = ?, name = ?, description = ?, color = ?, updated_at = ? WHERE id = ?`,
+      [role.code.toLowerCase().trim(), role.name.trim(), role.description || '', role.color || 'blue', now, role.id]
+    );
+  }
+
+  public async deleteRole(id: string): Promise<void> {
+    // Prevent deletion of system roles (admin/user)
+    const existing = await this.get<any>(`SELECT is_system FROM custom_roles WHERE id = ?`, [id]);
+    if (existing && existing.is_system) {
+      throw new Error('System roles cannot be deleted.');
+    }
+    await this.run(`DELETE FROM custom_roles WHERE id = ?`, [id]);
   }
 }

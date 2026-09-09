@@ -1,6 +1,6 @@
-export type LetterType = 'INCOMING' | 'OUTGOING';
-export type LetterStatus = 'DRAFT' | 'RECEIVED' | 'UNDER_REVIEW' | 'PROCESSED' | 'ARCHIVED';
-export type LetterPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type LetterType = 'INCOMING' | 'OUTGOING' | string;
+export type LetterStatus = 'DRAFT' | 'RECEIVED' | 'UNDER_REVIEW' | 'PROCESSED' | 'ARCHIVED' | string;
+export type LetterPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | string;
 
 export interface LetterProps {
   id: string;
@@ -73,8 +73,8 @@ export class Letter {
     if (!props.subject || props.subject.trim() === '') {
       throw new Error('Subject cannot be empty');
     }
-    if (props.type !== 'INCOMING' && props.type !== 'OUTGOING') {
-      throw new Error(`Invalid Letter Type: ${props.type}`);
+    if (!props.type || props.type.trim() === '') {
+      throw new Error('Letter Type cannot be empty');
     }
   }
 

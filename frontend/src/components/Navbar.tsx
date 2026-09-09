@@ -24,7 +24,9 @@ import {
   FileJson,
   Key,
   Palette,
-  AlertTriangle
+  AlertTriangle,
+  Layers,
+  FolderTree
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -65,22 +67,46 @@ export default function Navbar() {
     { href: '/search', label: 'Search', icon: Search },
   ];
 
-  const adminSettingsTabs = [
-    { href: '/settings?tab=general', label: 'General & Storage', icon: HardDrive, desc: 'Hardware & volume status' },
-    { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern styling' },
-    { href: '/settings?tab=users', label: 'User Accounts', icon: Users, desc: 'Create & manage accounts' },
-    { href: '/settings?tab=matrix', label: 'Access Matrix', icon: Shield, desc: 'Modify buttons & role access' },
-    { href: '/settings?tab=format', label: 'Reference Format', icon: SlidersHorizontal, desc: 'Prefix & digit customizer' },
-    { href: '/settings?tab=backup', label: 'Backup & Recovery', icon: FileJson, desc: 'Export & restore repository' },
+  const adminSettingsCategories = [
+    {
+      title: 'Classifications',
+      items: [
+        { href: '/settings/statuses', label: 'Statuses', icon: Layers, desc: 'Manage workflow statuses' },
+        { href: '/settings/priorities', label: 'Priorities', icon: AlertTriangle, desc: 'Urgency & SLA tiers' },
+        { href: '/settings/types', label: 'Letter Types', icon: FolderTree, desc: 'Classification streams' },
+      ]
+    },
+    {
+      title: 'Access Control',
+      items: [
+        { href: '/settings/access-matrix', label: 'Access Matrix', icon: Shield, desc: 'Buttons & role permissions' },
+        { href: '/settings/roles', label: 'Roles Management', icon: ShieldCheck, desc: 'Define & assign roles' },
+        { href: '/settings?tab=users', label: 'User Accounts', icon: Users, desc: 'Staff & admin logins' },
+      ]
+    },
+    {
+      title: 'System & Design',
+      items: [
+        { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern theme' },
+        { href: '/settings?tab=format', label: 'Reference Format', icon: SlidersHorizontal, desc: 'Code numbering rules' },
+        { href: '/settings?tab=general', label: 'Storage & Hardware', icon: HardDrive, desc: 'Volume & database' },
+        { href: '/settings?tab=backup', label: 'Backup & Recovery', icon: FileJson, desc: 'Database export/import' },
+      ]
+    }
   ];
 
-  const staffSettingsTabs = [
-    { href: '/settings?tab=profile', label: 'My Profile & Avatar', icon: Key, desc: 'Update password & avatar' },
-    { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern styling' },
-    { href: '/settings?tab=matrix', label: 'Access Permissions', icon: Shield, desc: 'View granted capabilities' },
+  const staffSettingsCategories = [
+    {
+      title: 'My Account',
+      items: [
+        { href: '/settings?tab=profile', label: 'My Profile & Avatar', icon: Key, desc: 'Update password & avatar' },
+        { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern theme' },
+        { href: '/settings/access-matrix', label: 'Access Matrix', icon: Shield, desc: 'View granted capabilities' },
+      ]
+    }
   ];
 
-  const settingsTabs = isAdmin ? adminSettingsTabs : staffSettingsTabs;
+  const categories = isAdmin ? adminSettingsCategories : staffSettingsCategories;
   const isSettingsActive = pathname.startsWith('/settings') || pathname.startsWith('/access-matrix');
 
   return (
@@ -159,37 +185,39 @@ export default function Navbar() {
                 </button>
 
                 {settingsDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
-                        {isAdmin ? 'System Administration' : 'Account Navigation'}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      {settingsTabs.map((tab) => {
-                        const TabIcon = tab.icon;
-                        return (
-                          <Link
-                            key={tab.href}
-                            href={tab.href}
-                            onClick={() => setSettingsDropdownOpen(false)}
-                            className="flex items-start gap-2.5 p-2 rounded-xl text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition group"
-                          >
-                            <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 transition">
-                              <TabIcon className="w-3.5 h-3.5" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
-                                {tab.label}
-                              </div>
-                              <div className="text-[11px] text-slate-400 dark:text-slate-500">
-                                {tab.desc}
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
+                  <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-100 dark:divide-slate-800">
+                    {categories.map((cat, catIdx) => (
+                      <div key={cat.title} className={catIdx > 0 ? 'pt-2 mt-2' : ''}>
+                        <div className="px-2 py-1 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
+                          {cat.title}
+                        </div>
+                        <div className="space-y-0.5 mt-0.5">
+                          {cat.items.map((tab) => {
+                            const TabIcon = tab.icon;
+                            return (
+                              <Link
+                                key={tab.href}
+                                href={tab.href}
+                                onClick={() => setSettingsDropdownOpen(false)}
+                                className="flex items-start gap-2.5 p-1.5 rounded-xl text-xs hover:bg-slate-50 dark:hover:bg-slate-800/80 transition group"
+                              >
+                                <div className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 transition">
+                                  <TabIcon className="w-3.5 h-3.5" />
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                                    {tab.label}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 dark:text-slate-500">
+                                    {tab.desc}
+                                  </div>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -272,24 +300,28 @@ export default function Navbar() {
             );
           })}
 
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-bold text-slate-400 px-3 uppercase tracking-wider block mb-1">
-              {isAdmin ? 'Settings Menu' : 'Account Menu'}
-            </span>
-            {settingsTabs.map((tab) => {
-              const TabIcon = tab.icon;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                >
-                  <TabIcon className="w-4 h-4 text-slate-500" />
-                  <span>{tab.label}</span>
-                </Link>
-              );
-            })}
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+            {categories.map((cat) => (
+              <div key={cat.title} className="space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 px-3 uppercase tracking-wider block">
+                  {cat.title}
+                </span>
+                {cat.items.map((tab) => {
+                  const TabIcon = tab.icon;
+                  return (
+                    <Link
+                      key={tab.href}
+                      href={tab.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                    >
+                      <TabIcon className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{tab.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
           {user && (

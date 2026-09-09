@@ -46,11 +46,20 @@ export class LetterController {
         parsedTags = tags;
       }
 
-      const file = req.file ? {
-        tempFilePath: req.file.path,
-        originalName: req.file.originalname,
-        mimeType: req.file.mimetype
-      } : undefined;
+      let files: any[] = [];
+      if (req.files && Array.isArray(req.files)) {
+        files = req.files.map(f => ({
+          tempFilePath: f.path,
+          originalName: f.originalname,
+          mimeType: f.mimetype
+        }));
+      } else if (req.file) {
+        files = [{
+          tempFilePath: req.file.path,
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype
+        }];
+      }
 
       const details = await this.letterService.createLetter({
         referenceNumber,
@@ -65,7 +74,8 @@ export class LetterController {
         priority: priority as LetterPriority,
         dueDate,
         tags: parsedTags,
-        file
+        file: files[0],
+        files: files.length > 0 ? files : undefined
       });
 
       res.status(201).json({
@@ -223,6 +233,7 @@ export class LetterController {
   public streamFile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
+      const attachmentId = (req.params.attachmentId || req.query.attachmentId) as string | undefined;
       const details = await this.letterService.getLetterDetails(id);
 
       if (!details || details.attachments.length === 0) {
@@ -230,7 +241,10 @@ export class LetterController {
         return;
       }
 
-      const attachment = details.attachments[0];
+      const attachment = attachmentId
+        ? details.attachments.find(a => a.id === attachmentId) || details.attachments[0]
+        : details.attachments[0];
+
       res.setHeader('Content-Type', attachment.mimeType);
       res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(attachment.originalName)}"`);
 
@@ -244,6 +258,7 @@ export class LetterController {
   public downloadFile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
+      const attachmentId = (req.params.attachmentId || req.query.attachmentId) as string | undefined;
       const details = await this.letterService.getLetterDetails(id);
 
       if (!details || details.attachments.length === 0) {
@@ -251,12 +266,63 @@ export class LetterController {
         return;
       }
 
-      const attachment = details.attachments[0];
+      const attachment = attachmentId
+        ? details.attachments.find(a => a.id === attachmentId) || details.attachments[0]
+        : details.attachments[0];
+
       res.setHeader('Content-Type', attachment.mimeType);
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(attachment.originalName)}"`);
 
       const fileStream = (this.letterService as any).storageService.getFileStream(attachment.filePath);
       fileStream.pipe(res);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public addAttachment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      if (!req.file) {
+        res.status(400).json({ success: false, error: { message: 'No file uploaded' } });
+        return;
+      }
+      const attachment = await this.letterService.addAttachment(id, {
+        tempFilePath: req.file.path,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype
+      });
+      res.status(201).json({ success: true, data: attachment.toJSON() });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public deleteAttachment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id, attachmentId } = req.params;
+      const success = await this.letterService.deleteAttachment(id, attachmentId);
+      if (!success) {
+        res.status(404).json({ success: false, error: { message: 'Attachment not found' } });
+        return;
+      }
+      res.status(200).json({ success: true, message: 'Attachment deleted successfully' });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public combineAttachments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const additionalFile = req.file ? {
+        tempFilePath: req.file.path,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype
+      } : undefined;
+
+      const attachment = await this.letterService.combinePdfs(id, additionalFile);
+      res.status(200).json({ success: true, data: attachment.toJSON(), message: 'PDFs successfully combined' });
     } catch (err) {
       next(err);
     }

@@ -107,99 +107,89 @@ function LettersContent() {
     : letters;
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-4">
+      {/* Top Header - Compact */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             All Letters
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Find and manage all letters.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Find, filter, and manage correspondence archive.
           </p>
         </div>
 
         <Link
           href="/encode"
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-500/20 transition self-start sm:self-auto"
+          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 transition self-start sm:self-auto cursor-pointer"
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className="w-3.5 h-3.5" />
           <span>Upload Letter</span>
         </Link>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-colors">
+      {/* Filter and Search Bar - Compact */}
+      <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 transition-colors">
         {/* Search */}
         <form onSubmit={handleSearchSubmit} className="flex-1 relative max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by subject, sender, receiver, VEM#..."
-            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            placeholder="Search subject, sender, receiver, VEM#..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
           />
         </form>
 
-        {/* Filter Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* Filters Group */}
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Type Filter */}
-          <div className="flex items-center space-x-1.5 text-xs text-slate-600 dark:text-slate-300">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span>Type:</span>
-            <select
-              value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value);
-                setPage(1);
-              }}
-              className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">All Types</option>
-              <option value="INCOMING">Incoming</option>
-              <option value="OUTGOING">Outgoing</option>
-            </select>
-          </div>
+          <select
+            value={typeFilter}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setPage(1);
+            }}
+            className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none"
+          >
+            <option value="">All Types</option>
+            <option value="INCOMING">Incoming</option>
+            <option value="OUTGOING">Outgoing</option>
+          </select>
 
           {/* Status Filter */}
-          <div className="flex items-center space-x-1.5 text-xs text-slate-600 dark:text-slate-300">
-            <span>Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">All Statuses</option>
-              <option value="RECEIVED">Received</option>
-              <option value="DRAFT">Draft</option>
-              <option value="UNDER_REVIEW">In Review</option>
-              <option value="PROCESSED">Completed</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
-          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+            className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none"
+          >
+            <option value="">All Statuses</option>
+            <option value="RECEIVED">Received</option>
+            <option value="DRAFT">Draft</option>
+            <option value="UNDER_REVIEW">In Review</option>
+            <option value="PROCESSED">Completed</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
 
           {/* Priority Filter */}
-          <div className="flex items-center space-x-1.5 text-xs text-slate-600 dark:text-slate-300">
-            <span>Priority:</span>
-            <select
-              value={priorityFilter}
-              onChange={(e) => {
-                setPriorityFilter(e.target.value);
-                setPage(1);
-              }}
-              className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">All Priorities</option>
-              <option value="URGENT">Urgent</option>
-              <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LOW">Low</option>
-            </select>
-          </div>
+          <select
+            value={priorityFilter}
+            onChange={(e) => {
+              setPriorityFilter(e.target.value);
+              setPage(1);
+            }}
+            className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none"
+          >
+            <option value="">All Priorities</option>
+            <option value="URGENT">⚠️ Urgent</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Normal</option>
+            <option value="LOW">Low</option>
+          </select>
 
           {/* Overdue Quick Filter Button */}
           <button
@@ -208,20 +198,20 @@ function LettersContent() {
               setOverdueFilter(!overdueFilter);
               setPage(1);
             }}
-            className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+            className={`flex items-center space-x-1 px-2 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
               overdueFilter
-                ? 'bg-red-500 text-white border-red-600 shadow-xs'
+                ? 'bg-red-500 text-white border-red-600 shadow-2xs'
                 : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>Overdue Only</span>
+            <AlertCircle className="w-3 h-3" />
+            <span>Overdue</span>
           </button>
 
           {/* Active OCR Reading Tag if present */}
           {ocrStatusFilter && (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 text-xs font-semibold">
-              <span>OCR Reading: Pending</span>
+            <span className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 text-xs font-semibold">
+              <span>OCR: Pending</span>
               <button
                 onClick={() => {
                   setOcrStatusFilter('');
@@ -230,7 +220,7 @@ function LettersContent() {
                 className="hover:text-amber-900 dark:hover:text-amber-100 ml-1"
                 title="Clear OCR filter"
               >
-                <X className="w-3 h-3" />
+                <X className="w-2.5 h-2.5" />
               </button>
             </span>
           )}
@@ -239,34 +229,34 @@ function LettersContent() {
           {hasActiveFilters && (
             <button
               onClick={resetAllFilters}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center space-x-1 text-xs"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center space-x-1 text-xs cursor-pointer"
               title="Reset all filters"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3 h-3" />
               <span className="hidden sm:inline">Reset</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Letters Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+      {/* Letters Table - Compact Rows */}
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden transition-colors">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 dark:text-slate-500">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-500" />
-            <p className="text-sm">Loading letters...</p>
+          <div className="p-8 text-center text-slate-400 dark:text-slate-500">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
+            <p className="text-xs">Loading letters...</p>
           </div>
         ) : displayedLetters.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 dark:text-slate-500">
-            <FileText className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-            <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200">No matching letters</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+          <div className="p-8 text-center text-slate-400 dark:text-slate-500">
+            <FileText className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">No matching letters</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-sm mx-auto">
               Try changing your search terms or filters.
             </p>
             {hasActiveFilters && (
               <button
                 onClick={resetAllFilters}
-                className="mt-4 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
+                className="mt-3 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition cursor-pointer"
               >
                 Clear all filters
               </button>
@@ -274,18 +264,18 @@ function LettersContent() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-700 dark:text-slate-200">
-              <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-200">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="px-4 sm:px-6 py-3.5">Reference No</th>
-                  <th className="px-4 py-3.5">VEM No</th>
-                  <th className="px-4 py-3.5">Type</th>
-                  <th className="px-4 sm:px-6 py-3.5">Subject</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 hidden md:table-cell">From</th>
-                  <th className="px-4 py-3.5 hidden lg:table-cell">To</th>
-                  <th className="px-4 py-3.5 hidden sm:table-cell">Date & SLA</th>
-                  <th className="px-4 sm:px-6 py-3.5 text-right">Actions</th>
+                  <th className="px-3.5 py-2">Reference No</th>
+                  <th className="px-2.5 py-2">VEM No</th>
+                  <th className="px-2.5 py-2">Type</th>
+                  <th className="px-3.5 py-2">Subject</th>
+                  <th className="px-2.5 py-2">Status</th>
+                  <th className="px-2.5 py-2 hidden md:table-cell">From</th>
+                  <th className="px-2.5 py-2 hidden lg:table-cell">To</th>
+                  <th className="px-2.5 py-2 hidden sm:table-cell">Date & SLA</th>
+                  <th className="px-3.5 py-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -293,54 +283,54 @@ function LettersContent() {
                   const isOverdue = l.dueDate && new Date().toISOString().split('T')[0] > l.dueDate && l.status !== 'PROCESSED' && l.status !== 'ARCHIVED';
                   return (
                     <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
-                      <td className="px-4 sm:px-6 py-4 font-mono font-semibold text-xs whitespace-nowrap">
-                        <div className="flex items-center gap-2">
+                      <td className="px-3.5 py-2 font-mono font-semibold text-xs whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
                           <PriorityIcon priority={l.priority} />
                           <Link href={`/letters/${l.id}`} className="text-blue-600 dark:text-blue-400 hover:underline" title="View details">
                             {l.referenceNumber}
                           </Link>
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-2.5 py-2 whitespace-nowrap">
                         {l.vemNumber ? (
-                          <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/60 inline-flex items-center gap-1">
-                            <Hash className="w-3 h-3 text-emerald-500" />
+                          <span className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/60 inline-flex items-center gap-1">
+                            <Hash className="w-2.5 h-2.5 text-emerald-500" />
                             {l.vemNumber}
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-xs">-</span>
+                          <span className="text-slate-400 text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-2.5 py-2 whitespace-nowrap">
                         <TypeBadge type={l.type} />
                       </td>
-                      <td className="px-4 sm:px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate" title={l.subject}>
+                      <td className="px-3.5 py-2 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate" title={l.subject}>
                         {l.subject}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-2.5 py-2 whitespace-nowrap">
                         <StatusBadge status={l.status} />
                       </td>
-                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden md:table-cell">
+                      <td className="px-2.5 py-2 text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap hidden md:table-cell">
                         {l.sender}
                       </td>
-                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden lg:table-cell">
+                      <td className="px-2.5 py-2 text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap hidden lg:table-cell">
                         {l.recipient}
                       </td>
-                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:table-cell">
+                      <td className="px-2.5 py-2 text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:table-cell">
                         <div>{l.letterDate}</div>
                         {l.dueDate && (
-                          <div className="flex items-center gap-1 text-[11px] mt-0.5">
+                          <div className="flex items-center gap-1 text-[10px] mt-0.5">
                             <span className="text-slate-400">Due:</span>
                             <span className={isOverdue ? 'font-bold text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}>{l.dueDate}</span>
                             {isOverdue && (
-                              <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 uppercase">
+                              <span className="text-[9px] font-extrabold px-1 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 uppercase">
                                 Overdue
                               </span>
                             )}
                           </div>
                         )}
                       </td>
-                      <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
+                      <td className="px-3.5 py-2 text-right whitespace-nowrap">
                         <ActionDropdown
                           letter={l}
                           pageContext="letters"

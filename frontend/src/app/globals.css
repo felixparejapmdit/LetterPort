@@ -677,4 +677,33 @@ html[data-design="notion"].dark,
   border-top: 1px solid #2e2e2e !important;
 }
 
+/* 11. Notion Dark Mode Popovers, Dropdowns & Modals */
+.dark[data-design="notion"] [role="menu"],
+.theme-notion.dark [role="menu"],
+.dark[data-design="notion"] .shadow-2xl,
+.theme-notion.dark .shadow-2xl {
+  background-color: #222222 !important;
+  border-color: #383838 !important;
+  color: #e3e2e0 !important;
+}
+
+.dark[data-design="notion"] [role="menu"] button:hover,
+.theme-notion.dark [role="menu"] button:hover,
+.dark[data-design="notion"] [role="menu"] a:hover,
+.theme-notion.dark [role="menu"] a:hover {
+  background-color: #2c2c2c !important;
+  color: #ffffff !important;
+}
+
+/* 12. Compact Table Density Utility */
+.table-compact th {
+  padding: 0.4rem 0.6rem !important;
+  font-size: 0.7rem !important;
+}
+.table-compact td {
+  padding: 0.4rem 0.6rem !important;
+  font-size: 0.75rem !important;
+}
+
+
 

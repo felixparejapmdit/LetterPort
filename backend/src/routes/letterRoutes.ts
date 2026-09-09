@@ -5,6 +5,7 @@ import { StatsController } from '../controllers/StatsController';
 import { SettingsController } from '../controllers/SettingsController';
 import { AuthController } from '../controllers/AuthController';
 import { UserController } from '../controllers/UserController';
+import { ClassificationController } from '../controllers/ClassificationController';
 import { uploadMiddleware } from '../middleware/upload';
 
 export function createLetterRoutes(
@@ -13,7 +14,8 @@ export function createLetterRoutes(
   statsController: StatsController,
   settingsController: SettingsController,
   authController: AuthController,
-  userController: UserController
+  userController: UserController,
+  classificationController: ClassificationController
 ): Router {
   const router = Router();
 
@@ -26,6 +28,36 @@ export function createLetterRoutes(
   router.post('/users', userController.createUser);
   router.put('/users/:id', userController.updateUser);
   router.delete('/users/:id', userController.deleteUser);
+
+  // Roles Management Endpoints
+  router.get('/roles', classificationController.listRoles);
+  router.post('/roles', classificationController.createRole);
+  router.put('/roles/:id', classificationController.updateRole);
+  router.delete('/roles/:id', classificationController.deleteRole);
+
+  // People Directory Endpoints
+  router.get('/people', classificationController.listPeople);
+  router.post('/people', classificationController.createPerson);
+  router.delete('/people/:id', classificationController.deletePerson);
+
+  // Document Classifications Endpoints
+  // Statuses
+  router.get('/classifications/statuses', classificationController.listStatuses);
+  router.post('/classifications/statuses', classificationController.createStatus);
+  router.put('/classifications/statuses/:id', classificationController.updateStatus);
+  router.delete('/classifications/statuses/:id', classificationController.deleteStatus);
+
+  // Priorities
+  router.get('/classifications/priorities', classificationController.listPriorities);
+  router.post('/classifications/priorities', classificationController.createPriority);
+  router.put('/classifications/priorities/:id', classificationController.updatePriority);
+  router.delete('/classifications/priorities/:id', classificationController.deletePriority);
+
+  // Letter Types
+  router.get('/classifications/types', classificationController.listTypes);
+  router.post('/classifications/types', classificationController.createType);
+  router.put('/classifications/types/:id', classificationController.updateType);
+  router.delete('/classifications/types/:id', classificationController.deleteType);
 
   // Dashboard Statistics
   router.get('/stats', statsController.getStats);
@@ -49,14 +81,21 @@ export function createLetterRoutes(
   router.get('/letters/next-reference', letterController.getNextReference);
   router.get('/letters/next-vem', letterController.getNextVemNumber);
 
-  // Letters CRUD & Retrieval
-  router.post('/letters', uploadMiddleware.single('file'), letterController.createLetter);
+  // Letters CRUD & Retrieval (Supports single 'file' and multiple 'files')
+  router.post('/letters', uploadMiddleware.any(), letterController.createLetter);
   router.get('/letters', letterController.listLetters);
   router.get('/letters/:id', letterController.getLetter);
   router.put('/letters/:id', letterController.updateLetter);
   router.delete('/letters/:id', letterController.deleteLetter);
 
-  // File Viewing & Downloading
+  // Letter Attachment Management
+  router.post('/letters/:id/attachments', uploadMiddleware.single('file'), letterController.addAttachment);
+  router.delete('/letters/:id/attachments/:attachmentId', letterController.deleteAttachment);
+  router.post('/letters/:id/attachments/combine', uploadMiddleware.single('file'), letterController.combineAttachments);
+  router.get('/letters/:id/attachments/:attachmentId/file', letterController.streamFile);
+  router.get('/letters/:id/attachments/:attachmentId/download', letterController.downloadFile);
+
+  // File Viewing & Downloading (legacy fallback to first attachment)
   router.get('/letters/:id/file', letterController.streamFile);
   router.get('/letters/:id/download', letterController.downloadFile);
 

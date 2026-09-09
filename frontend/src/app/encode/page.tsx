@@ -2,27 +2,36 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { createLetter, getNextReference, getNextVem } from '@/lib/api';
+import { 
+  createLetter, 
+  getNextReference, 
+  getNextVem,
+  fetchStatuses,
+  fetchPriorities,
+  fetchLetterTypes,
+  ClassificationItem
+} from '@/lib/api';
+import PeopleAutocomplete from '@/components/PeopleAutocomplete';
 import { 
   Upload, 
   FileText, 
   X, 
   Sparkles, 
-  Send, 
-  Inbox, 
   Calendar, 
   Tag, 
   CheckCircle2, 
   AlertCircle,
   RefreshCw,
-  Hash
+  Hash,
+  Paperclip,
+  Trash2
 } from 'lucide-react';
 
 export default function EncodePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [type, setType] = useState<'INCOMING' | 'OUTGOING'>('INCOMING');
+  const [type, setType] = useState<string>('INCOMING');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [vemNumber, setVemNumber] = useState('');
   const [sender, setSender] = useState('');
@@ -36,9 +45,14 @@ export default function EncodePage() {
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  // Multiple files
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Dynamic classifications
+  const [types, setTypes] = useState<ClassificationItem[]>([]);
+  const [statuses, setStatuses] = useState<ClassificationItem[]>([]);
+  const [priorities, setPriorities] = useState<ClassificationItem[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,12 +60,30 @@ export default function EncodePage() {
   const [fetchingVem, setFetchingVem] = useState(false);
 
   useEffect(() => {
+    const loadMetadata = async () => {
+      try {
+        const [tList, sList, pList] = await Promise.all([
+          fetchLetterTypes().catch(() => []),
+          fetchStatuses().catch(() => []),
+          fetchPriorities().catch(() => [])
+        ]);
+        setTypes(tList);
+        setStatuses(sList);
+        setPriorities(pList);
+      } catch (err) {
+        console.error('Failed to load classifications:', err);
+      }
+    };
+    loadMetadata();
+  }, []);
+
+  useEffect(() => {
     const fetchCodes = async () => {
       setFetchingRef(true);
       setFetchingVem(true);
       try {
         const [ref, nextVem] = await Promise.all([
-          getNextReference(type).catch(() => ''),
+          getNextReference(type as any).catch(() => ''),
           getNextVem().catch(() => ''),
         ]);
         if (ref) setReferenceNumber(ref);
@@ -82,21 +114,21 @@ export default function EncodePage() {
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
-  const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    if (file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file);
-      setFilePreviewUrl(url);
-    } else {
-      setFilePreviewUrl(null);
-    }
+  const handleFilesSelect = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const newFiles = Array.from(fileList);
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelect(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files) {
+      handleFilesSelect(e.dataTransfer.files);
     }
   };
 
@@ -130,8 +162,11 @@ export default function EncodePage() {
       }
       formData.append('tags', JSON.stringify(tags));
 
-      if (selectedFile) {
-        formData.append('file', selectedFile);
+      selectedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
+      if (selectedFiles.length > 0) {
+        formData.append('file', selectedFiles[0]);
       }
 
       const created = await createLetter(formData);
@@ -143,19 +178,21 @@ export default function EncodePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Upload Letter
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Enter letter details and upload a document scan or PDF.
-        </p>
+    <div className="max-w-3xl mx-auto space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Encode Letter
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Enter letter metadata, contacts with auto-suggest, and attach multiple scans or PDFs.
+          </p>
+        </div>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-sm flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs flex items-start space-x-2.5">
+          <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
           <div>
             <h4 className="font-semibold text-rose-900 dark:text-rose-100">Missing Information</h4>
             <p className="mt-0.5">{error}</p>
@@ -163,51 +200,67 @@ export default function EncodePage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Direction Selector */}
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm transition-colors">
-          <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-            Letter Type
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        {/* Type / Direction Selector - Compact */}
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+            Letter Classification Type
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setType('INCOMING')}
-              className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl border-2 font-bold text-sm transition ${
-                type === 'INCOMING'
-                  ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 shadow-sm'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              <Inbox className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Incoming (Received)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setType('OUTGOING')}
-              className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl border-2 font-bold text-sm transition ${
-                type === 'OUTGOING'
-                  ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 shadow-sm'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              <Send className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Outgoing (Sent)</span>
-            </button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {types.length > 0 ? (
+              types.map(t => (
+                <button
+                  key={t.id || t.code}
+                  type="button"
+                  onClick={() => setType(t.code)}
+                  className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-lg border font-semibold text-xs transition cursor-pointer ${
+                    type === t.code
+                      ? 'border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 shadow-2xs'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                </button>
+              ))
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setType('INCOMING')}
+                  className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-lg border font-semibold text-xs transition cursor-pointer ${
+                    type === 'INCOMING'
+                      ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 shadow-2xs'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  <span>Incoming</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType('OUTGOING')}
+                  className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-lg border font-semibold text-xs transition cursor-pointer ${
+                    type === 'OUTGOING'
+                      ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 shadow-2xs'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  <span>Outgoing</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Details Card */}
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-            Letter Details
+        {/* Details Card - Compact */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
+          <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+            Letter Information
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             {/* Reference Number */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Reference Number *
               </label>
               <div className="relative">
@@ -216,27 +269,27 @@ export default function EncodePage() {
                   value={referenceNumber}
                   onChange={(e) => setReferenceNumber(e.target.value)}
                   required
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-slate-900 dark:text-slate-100"
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-slate-900 dark:text-slate-100"
                 />
                 <button
                   type="button"
                   onClick={async () => {
                     setFetchingRef(true);
-                    const ref = await getNextReference(type);
+                    const ref = await getNextReference(type as any);
                     setReferenceNumber(ref);
                     setFetchingRef(false);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 rounded"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-blue-600 rounded cursor-pointer"
                   title="Generate new reference code"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${fetchingRef ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 ${fetchingRef ? 'animate-spin' : ''}`} />
                 </button>
               </div>
             </div>
 
             {/* VEM Number */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
                 <span>VEM-Number</span>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tracking</span>
               </label>
@@ -245,10 +298,9 @@ export default function EncodePage() {
                   type="text"
                   value={vemNumber}
                   onChange={(e) => setVemNumber(e.target.value)}
-                  placeholder=""
-                  className="w-full pl-8 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-mono text-slate-900 dark:text-slate-100"
+                  className="w-full pl-7 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-mono text-slate-900 dark:text-slate-100"
                 />
-                <Hash className="w-3.5 h-3.5 text-emerald-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <Hash className="w-3 h-3 text-emerald-500 absolute left-2 top-1/2 -translate-y-1/2" />
                 <button
                   type="button"
                   onClick={async () => {
@@ -257,64 +309,61 @@ export default function EncodePage() {
                     if (nextVem) setVemNumber(nextVem);
                     setFetchingVem(false);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-600 rounded"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-emerald-600 rounded cursor-pointer"
                   title="Generate next VEM Number"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${fetchingVem ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 ${fetchingVem ? 'animate-spin' : ''}`} />
                 </button>
               </div>
             </div>
 
             {/* Priority */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Priority
               </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-200"
+                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-200"
               >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Normal</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent (Needs Fast Reply)</option>
+                {priorities.length > 0 ? (
+                  priorities.map(p => (
+                    <option key={p.id || p.code} value={p.code}>{p.label}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Normal</option>
+                    <option value="HIGH">High</option>
+                    <option value="URGENT">Urgent (Needs Fast Reply)</option>
+                  </>
+                )}
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                From (Sender) *
-              </label>
-              <input
-                type="text"
-                value={sender}
-                onChange={(e) => setSender(e.target.value)}
-                placeholder="Sender name or organization"
-                required
-                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                To (Receiver) *
-              </label>
-              <input
-                type="text"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                placeholder="Receiver name or department"
-                required
-                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
-              />
-            </div>
+          {/* Sender & Receiver with People Autocomplete */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <PeopleAutocomplete
+              label="From (Sender)"
+              value={sender}
+              onChange={setSender}
+              placeholder="Sender name or organization..."
+              required
+            />
+            <PeopleAutocomplete
+              label="To (Receiver)"
+              value={recipient}
+              onChange={setRecipient}
+              placeholder="Receiver name or department..."
+              required
+            />
           </div>
 
+          {/* Subject */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Subject *
             </label>
             <input
@@ -323,77 +372,84 @@ export default function EncodePage() {
               onChange={(e) => setSubject(e.target.value)}
               placeholder="What is this letter about?"
               required
-              className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-900 dark:text-slate-100"
+              className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-900 dark:text-slate-100"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Dates & Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Letter Date
               </label>
               <input
                 type="date"
                 value={letterDate}
                 onChange={(e) => setLetterDate(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
+                className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 {type === 'INCOMING' ? 'Date Received' : 'Date Sent'}
               </label>
               <input
                 type="date"
                 value={receivedSentDate}
                 onChange={(e) => setReceivedSentDate(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
+                className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Target Due Date (SLA)
               </label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                placeholder="Auto-set by Priority"
-                title="Leave empty to auto-set (+3d Urgent, +5d High, +7d Normal)"
-                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
+                className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Letter Status
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-200"
+                className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-200"
               >
-                <option value="RECEIVED">Received</option>
-                <option value="DRAFT">Draft</option>
-                <option value="UNDER_REVIEW">In Review</option>
-                <option value="PROCESSED">Completed / Done</option>
-                <option value="ARCHIVED">Archived</option>
+                {statuses.length > 0 ? (
+                  statuses.map(s => (
+                    <option key={s.id || s.code} value={s.code}>{s.label}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="RECEIVED">Received</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="UNDER_REVIEW">In Review</option>
+                    <option value="PROCESSED">Completed</option>
+                    <option value="ARCHIVED">Archived</option>
+                  </>
+                )}
               </select>
             </div>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Categories & Tags (optional, press Enter to add)
+            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Categories & Tags (press Enter to add)
             </label>
-            <div className="flex flex-wrap gap-1.5 p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl min-h-[42px] items-center">
+            <div className="flex flex-wrap gap-1 p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg min-h-[34px] items-center">
               {tags.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-xs font-semibold"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-[11px] font-medium"
                 >
                   #{t}
                   <button
@@ -401,7 +457,7 @@ export default function EncodePage() {
                     onClick={() => handleRemoveTag(t)}
                     className="hover:text-rose-600 dark:hover:text-rose-400"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-2.5 h-2.5" />
                   </button>
                 </span>
               ))}
@@ -410,23 +466,23 @@ export default function EncodePage() {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleAddTag}
-                placeholder={tags.length === 0 ? "e.g. invoice, finance, meeting..." : ""}
-                className="flex-1 bg-transparent border-none text-xs focus:outline-none text-slate-700 dark:text-slate-200 min-w-[120px]"
+                placeholder={tags.length === 0 ? "e.g. invoice, finance, notice..." : ""}
+                className="flex-1 bg-transparent border-none text-xs focus:outline-none text-slate-700 dark:text-slate-200 min-w-[100px]"
               />
             </div>
           </div>
         </div>
 
-        {/* Document Upload Zone */}
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3 transition-colors">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              Attach Letter Document (PDF or Photo)
+        {/* Document Upload Zone - Supports Multiple Files */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2.5">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              Attach Document Files ({selectedFiles.length})
             </h2>
-            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Automatic Text Reading Enabled
+            <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              OCR Enabled
             </span>
           </div>
 
@@ -438,10 +494,10 @@ export default function EncodePage() {
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center cursor-pointer transition ${
+            className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition ${
               isDragging
                 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40'
-                : selectedFile
+                : selectedFiles.length > 0
                 ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/20 dark:bg-emerald-950/20'
                 : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'
             }`}
@@ -449,66 +505,70 @@ export default function EncodePage() {
             <input
               ref={fileInputRef}
               type="file"
+              multiple
               accept=".pdf,image/jpeg,image/png,image/tiff,image/webp,image/svg+xml,.svg"
               className="hidden"
               onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  handleFileSelect(e.target.files[0]);
-                }
+                handleFilesSelect(e.target.files);
               }}
             />
 
-            {selectedFile ? (
-              <div className="flex flex-col items-center">
-                {filePreviewUrl ? (
-                  <img
-                    src={filePreviewUrl}
-                    alt="Preview"
-                    className="max-h-36 rounded shadow-md mb-3 object-contain border dark:border-slate-700"
-                  />
-                ) : (
-                  <div className="p-3 bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 rounded-xl mb-3">
-                    <FileText className="w-8 h-8" />
-                  </div>
-                )}
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{selectedFile.name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFile(null);
-                    setFilePreviewUrl(null);
-                  }}
-                  className="mt-3 text-xs text-rose-600 dark:text-rose-400 hover:underline font-semibold"
-                >
-                  Remove file
-                </button>
+            <div className="flex flex-col items-center">
+              <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-full mb-2">
+                <Upload className="w-5 h-5" />
               </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <div className="p-3 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-full mb-3">
-                  <Upload className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  Click to choose a letter file, or <span className="text-blue-600 dark:text-blue-400">drag it here</span>
-                </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  Supports PDF, JPG, and PNG
-                </p>
-              </div>
-            )}
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                Click to browse files, or <span className="text-blue-600 dark:text-blue-400">drag multiple files here</span>
+              </p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                Supports PDF, JPG, PNG, and TIFF (multiple uploads supported)
+              </p>
+            </div>
           </div>
+
+          {/* Selected Files List */}
+          {selectedFiles.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                Files ready for upload:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {selectedFiles.map((file, idx) => (
+                  <div
+                    key={`${file.name}-${idx}`}
+                    className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs"
+                  >
+                    <div className="flex items-center gap-1.5 truncate mr-2">
+                      <Paperclip className="w-3 h-3 text-blue-500 shrink-0" />
+                      <div className="truncate">
+                        <p className="font-medium text-slate-800 dark:text-slate-200 truncate">{file.name}</p>
+                        <p className="text-[10px] text-slate-400">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(idx);
+                      }}
+                      className="p-1 text-slate-400 hover:text-rose-600 rounded transition cursor-pointer"
+                      title="Remove file"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Submit Button */}
-        <div className="flex items-center justify-end space-x-3 pt-2">
+        <div className="flex items-center justify-end space-x-2 pt-2">
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-semibold transition"
+            className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
           >
             Cancel
           </button>
@@ -516,16 +576,16 @@ export default function EncodePage() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50 transition flex items-center gap-2"
+            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-500/20 disabled:opacity-50 transition flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             {loading ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-3 h-3 animate-spin" />
                 <span>Saving Letter...</span>
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Save Letter</span>
               </>
             )}

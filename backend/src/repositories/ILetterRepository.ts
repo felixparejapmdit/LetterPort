@@ -43,6 +43,63 @@ export interface DashboardStats {
   }>;
 }
 
+export interface Person {
+  id: string;
+  name: string;
+  type?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ClassificationStatus {
+  id: string;
+  code: string;
+  label: string;
+  color: string;
+  description: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ClassificationPriority {
+  id: string;
+  code: string;
+  label: string;
+  color: string;
+  level: number;
+  slaDays: number;
+  description: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ClassificationType {
+  id: string;
+  code: string;
+  label: string;
+  prefix: string;
+  description: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RoleItem {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  color: string;
+  isSystem: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ILetterRepository {
   init(): Promise<void>;
   saveLetter(letter: Letter): Promise<void>;
@@ -76,4 +133,34 @@ export interface ILetterRepository {
 
   getConfig?(key: string, defaultValue?: string): Promise<string>;
   setConfig?(key: string, value: string): Promise<void>;
+
+  // People Directory
+  savePerson?(name: string, type?: string): Promise<Person>;
+  listPeople?(search?: string): Promise<Person[]>;
+  deletePerson?(id: string): Promise<void>;
+
+  // Classifications: Statuses
+  listStatuses?(): Promise<ClassificationStatus[]>;
+  saveStatus?(status: ClassificationStatus): Promise<void>;
+  updateStatus?(status: ClassificationStatus): Promise<void>;
+  deleteStatus?(id: string): Promise<void>;
+
+  // Classifications: Priorities
+  listPriorities?(): Promise<ClassificationPriority[]>;
+  savePriority?(priority: ClassificationPriority): Promise<void>;
+  updatePriority?(priority: ClassificationPriority): Promise<void>;
+  deletePriority?(id: string): Promise<void>;
+
+  // Classifications: Types
+  listTypes?(): Promise<ClassificationType[]>;
+  saveType?(type: ClassificationType): Promise<void>;
+  updateType?(type: ClassificationType): Promise<void>;
+  deleteType?(id: string): Promise<void>;
+
+  // User Roles
+  listRoles?(): Promise<RoleItem[]>;
+  saveRole?(role: RoleItem): Promise<void>;
+  updateRole?(role: RoleItem): Promise<void>;
+  deleteRole?(id: string): Promise<void>;
 }
+

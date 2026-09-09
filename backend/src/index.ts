@@ -18,6 +18,7 @@ import { StatsController } from './controllers/StatsController';
 import { SettingsController } from './controllers/SettingsController';
 import { AuthController } from './controllers/AuthController';
 import { UserController } from './controllers/UserController';
+import { ClassificationController } from './controllers/ClassificationController';
 import { createLetterRoutes } from './routes/letterRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -87,6 +88,7 @@ async function bootstrap() {
   const settingsController = new SettingsController(settingsService);
   const authController = new AuthController(repository);
   const userController = new UserController(repository);
+  const classificationController = new ClassificationController(repository);
 
   // 3. Express Middleware
   app.use(cors({
@@ -113,7 +115,8 @@ async function bootstrap() {
     statsController, 
     settingsController,
     authController,
-    userController
+    userController,
+    classificationController
   );
   app.use('/api', router);
 

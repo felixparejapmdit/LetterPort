@@ -384,3 +384,279 @@ export async function updatePermissions(permissions: RolePermissionsMap, token?:
   }
 }
 
+// ==========================================
+// People Directory
+// ==========================================
+export interface Person {
+  id: string;
+  name: string;
+  type: string;
+  createdAt?: string;
+}
+
+export async function fetchPeople(search?: string): Promise<Person[]> {
+  const query = search ? `?search=${encodeURIComponent(search)}` : '';
+  const res = await fetch(`${API_BASE}/people${query}`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function createPerson(name: string, type: string = 'contact'): Promise<Person> {
+  const res = await fetch(`${API_BASE}/people`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, type })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to create person');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export async function deletePerson(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/people/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete person');
+}
+
+// ==========================================
+// Classifications: Statuses, Priorities, Types
+// ==========================================
+export interface ClassificationItem {
+  id: string;
+  code: string;
+  label: string;
+  color?: string;
+  description?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export interface RoleItem {
+  id: string;
+  code?: string;
+  name: string;
+  label?: string;
+  description: string;
+  isSystem: boolean;
+  color?: string;
+  createdAt?: string;
+}
+
+// Statuses
+export async function fetchStatuses(): Promise<ClassificationItem[]> {
+  const res = await fetch(`${API_BASE}/classifications/statuses`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function createStatus(data: Partial<ClassificationItem>): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/statuses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to create status');
+  }
+}
+
+export async function updateStatus(id: string, data: Partial<ClassificationItem>): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/statuses/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to update status');
+  }
+}
+
+export async function deleteStatus(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/statuses/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete status');
+}
+
+// Priorities
+export async function fetchPriorities(): Promise<ClassificationItem[]> {
+  const res = await fetch(`${API_BASE}/classifications/priorities`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function createPriority(data: Partial<ClassificationItem>): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/priorities`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to create priority');
+  }
+}
+
+export async function updatePriority(id: string, data: Partial<ClassificationItem>): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/priorities/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to update priority');
+  }
+}
+
+export async function deletePriority(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/priorities/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete priority');
+}
+
+// Types
+export async function fetchLetterTypes(): Promise<ClassificationItem[]> {
+  const res = await fetch(`${API_BASE}/classifications/types`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function createLetterType(data: Partial<ClassificationItem>): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/types`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to create type');
+  }
+}
+
+export async function updateLetterType(id: string, data: Partial<ClassificationItem>): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/types/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to update type');
+  }
+}
+
+export async function deleteLetterType(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/classifications/types/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete type');
+}
+
+// Roles
+export async function fetchRoles(): Promise<RoleItem[]> {
+  const res = await fetch(`${API_BASE}/roles`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function createRole(data: { code?: string; name: string; label?: string; description?: string; color?: string }): Promise<void> {
+  const res = await fetch(`${API_BASE}/roles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code: (data.code || data.name).toLowerCase().replace(/\s+/g, '_'),
+      name: data.label || data.name,
+      description: data.description || '',
+      color: data.color || 'blue'
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to create role');
+  }
+}
+
+export async function updateRole(id: string, data: { code?: string; name?: string; label?: string; description?: string; color?: string }): Promise<void> {
+  const res = await fetch(`${API_BASE}/roles/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code: data.code,
+      name: data.label || data.name,
+      description: data.description,
+      color: data.color
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to update role');
+  }
+}
+
+export async function deleteRole(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/roles/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to delete role');
+  }
+}
+
+// ==========================================
+// Letter Attachments & Merging
+// ==========================================
+export function getAttachmentUrl(letterId: string, attachmentId: string): string {
+  return `${API_BASE}/letters/${letterId}/attachments/${attachmentId}/file`;
+}
+
+export function getAttachmentDownloadUrl(letterId: string, attachmentId: string): string {
+  return `${API_BASE}/letters/${letterId}/attachments/${attachmentId}/download`;
+}
+
+export async function addAttachment(letterId: string, file: File): Promise<Attachment> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${API_BASE}/letters/${letterId}/attachments`, {
+    method: 'POST',
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to upload attachment');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export async function deleteAttachment(letterId: string, attachmentId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/letters/${letterId}/attachments/${attachmentId}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to delete attachment');
+  }
+}
+
+export async function combinePdfs(letterId: string, additionalFile?: File): Promise<Attachment> {
+  const formData = new FormData();
+  if (additionalFile) {
+    formData.append('file', additionalFile);
+  }
+  const res = await fetch(`${API_BASE}/letters/${letterId}/attachments/combine`, {
+    method: 'POST',
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Failed to combine PDFs');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+

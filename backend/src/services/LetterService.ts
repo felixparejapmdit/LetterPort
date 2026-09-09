@@ -1,4 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import { PDFDocument } from 'pdf-lib';
 import { Letter, LetterPriority, LetterStatus, LetterType } from '../entities/Letter';
 import { Attachment } from '../entities/Attachment';
 import { OCRRecord } from '../entities/OCRRecord';
@@ -6,6 +8,13 @@ import { ILetterRepository, LetterFilter, SearchResult, DashboardStats } from '.
 import { IStorageService } from './StorageService';
 import { IOCRService } from './OCRService';
 import { IQueueService, OCRJob } from './QueueService';
+
+export interface FileInputDTO {
+  tempFilePath: string;
+  originalName: string;
+  mimeType: string;
+  buffer?: Buffer;
+}
 
 export interface CreateLetterDTO {
   referenceNumber?: string;
@@ -20,12 +29,8 @@ export interface CreateLetterDTO {
   priority?: LetterPriority;
   dueDate?: string;
   tags?: string[];
-  file?: {
-    tempFilePath: string;
-    originalName: string;
-    mimeType: string;
-    buffer?: Buffer;
-  };
+  file?: FileInputDTO;
+  files?: FileInputDTO[];
 }
 
 export interface UpdateLetterDTO {
@@ -106,16 +111,23 @@ export class LetterService {
     const attachments: Attachment[] = [];
     let ocrRecord: OCRRecord | null = null;
 
-    if (dto.file) {
-      const storedFile = dto.file.buffer
-        ? await this.storageService.saveBuffer(dto.file.buffer, dto.file.originalName, dto.file.mimeType)
-        : await this.storageService.saveFile(dto.file.tempFilePath, dto.file.originalName, dto.file.mimeType);
+    const incomingFiles: FileInputDTO[] = [];
+    if (dto.files && dto.files.length > 0) {
+      incomingFiles.push(...dto.files);
+    } else if (dto.file) {
+      incomingFiles.push(dto.file);
+    }
+
+    for (const f of incomingFiles) {
+      const storedFile = f.buffer
+        ? await this.storageService.saveBuffer(f.buffer, f.originalName, f.mimeType)
+        : await this.storageService.saveFile(f.tempFilePath, f.originalName, f.mimeType);
 
       const attachmentId = uuidv4();
       const attachment = new Attachment({
         id: attachmentId,
         letterId: letter.id,
-        originalName: dto.file.originalName,
+        originalName: f.originalName,
         storedFilename: storedFile.storedFilename,
         filePath: storedFile.filePath,
         mimeType: storedFile.mimeType,
@@ -126,19 +138,19 @@ export class LetterService {
       await this.repository.saveAttachment(attachment);
       attachments.push(attachment);
 
-      // Create Initial Pending OCR Record
-      const ocrId = uuidv4();
-      ocrRecord = new OCRRecord({
-        id: ocrId,
-        letterId: letter.id,
-        attachmentId: attachment.id,
-        status: 'PENDING'
-      });
+      if (!ocrRecord) {
+        // Create Initial Pending OCR Record for primary document
+        const ocrId = uuidv4();
+        ocrRecord = new OCRRecord({
+          id: ocrId,
+          letterId: letter.id,
+          attachmentId: attachment.id,
+          status: 'PENDING'
+        });
 
-      await this.repository.saveOCRRecord(ocrRecord);
-
-      // Enqueue OCR background processing
-      await this.queueService.enqueueOCRJob(letter.id, attachment.id);
+        await this.repository.saveOCRRecord(ocrRecord);
+        await this.queueService.enqueueOCRJob(letter.id, attachment.id);
+      }
     }
 
     return {
@@ -261,4 +273,142 @@ export class LetterService {
     }
     return `${prefix}-${String(nextSeq).padStart(4, '0')}`;
   }
+
+  public async addAttachment(letterId: string, file: FileInputDTO): Promise<Attachment> {
+    const letter = await this.repository.getLetterById(letterId);
+    if (!letter) throw new Error(`Letter ${letterId} not found`);
+
+    const storedFile = file.buffer
+      ? await this.storageService.saveBuffer(file.buffer, file.originalName, file.mimeType)
+      : await this.storageService.saveFile(file.tempFilePath, file.originalName, file.mimeType);
+
+    const attachmentId = uuidv4();
+    const attachment = new Attachment({
+      id: attachmentId,
+      letterId,
+      originalName: file.originalName,
+      storedFilename: storedFile.storedFilename,
+      filePath: storedFile.filePath,
+      mimeType: storedFile.mimeType,
+      fileSize: storedFile.fileSize,
+      checksum: storedFile.checksum
+    });
+
+    await this.repository.saveAttachment(attachment);
+
+    // If no OCR record yet, create one
+    const existingOcr = await this.repository.getOCRRecordByLetterId(letterId);
+    if (!existingOcr) {
+      const ocrId = uuidv4();
+      const ocrRecord = new OCRRecord({
+        id: ocrId,
+        letterId,
+        attachmentId: attachment.id,
+        status: 'PENDING'
+      });
+      await this.repository.saveOCRRecord(ocrRecord);
+      await this.queueService.enqueueOCRJob(letterId, attachment.id);
+    }
+
+    return attachment;
+  }
+
+  public async deleteAttachment(letterId: string, attachmentId: string): Promise<boolean> {
+    const attachment = await this.repository.getAttachmentById(attachmentId);
+    if (!attachment || attachment.letterId !== letterId) return false;
+
+    await this.repository.deleteAttachment(attachmentId);
+    try {
+      if (fs.existsSync(attachment.filePath)) {
+        await fs.promises.unlink(attachment.filePath);
+      }
+    } catch {}
+    return true;
+  }
+
+  public async combinePdfs(letterId: string, additionalFile?: FileInputDTO): Promise<Attachment> {
+    const letter = await this.repository.getLetterById(letterId);
+    if (!letter) throw new Error(`Letter ${letterId} not found`);
+
+    const attachments = await this.repository.getAttachmentsByLetterId(letterId);
+    const pdfAttachments = attachments.filter(a => a.isPdf());
+
+    const mergedPdf = await PDFDocument.create();
+    let totalPagesMerged = 0;
+
+    for (const att of pdfAttachments) {
+      try {
+        if (fs.existsSync(att.filePath)) {
+          const pdfBytes = await fs.promises.readFile(att.filePath);
+          const donorDoc = await PDFDocument.load(pdfBytes);
+          const pageIndices = donorDoc.getPageIndices();
+          const copiedPages = await mergedPdf.copyPages(donorDoc, pageIndices);
+          copiedPages.forEach(p => mergedPdf.addPage(p));
+          totalPagesMerged += copiedPages.length;
+        }
+      } catch (err) {
+        console.warn(`[PDF Merger] Could not merge attachment ${att.id}:`, err);
+      }
+    }
+
+    if (additionalFile) {
+      try {
+        let pdfBytes: Buffer;
+        if (additionalFile.buffer) {
+          pdfBytes = additionalFile.buffer;
+        } else if (additionalFile.tempFilePath && fs.existsSync(additionalFile.tempFilePath)) {
+          pdfBytes = await fs.promises.readFile(additionalFile.tempFilePath);
+        } else {
+          pdfBytes = Buffer.from([]);
+        }
+        if (pdfBytes.length > 0) {
+          const donorDoc = await PDFDocument.load(pdfBytes);
+          const pageIndices = donorDoc.getPageIndices();
+          const copiedPages = await mergedPdf.copyPages(donorDoc, pageIndices);
+          copiedPages.forEach(p => mergedPdf.addPage(p));
+          totalPagesMerged += copiedPages.length;
+        }
+      } catch (err) {
+        console.warn('[PDF Merger] Could not merge additional file:', err);
+      }
+    }
+
+    if (totalPagesMerged === 0) {
+      throw new Error('No valid PDF pages found to combine.');
+    }
+
+    const mergedBytes = await mergedPdf.save();
+    const storedFile = await this.storageService.saveBuffer(
+      Buffer.from(mergedBytes),
+      `${letter.referenceNumber}-combined.pdf`,
+      'application/pdf'
+    );
+
+    const newAttachment = new Attachment({
+      id: uuidv4(),
+      letterId,
+      originalName: `${letter.referenceNumber}-combined.pdf`,
+      storedFilename: storedFile.storedFilename,
+      filePath: storedFile.filePath,
+      mimeType: storedFile.mimeType,
+      fileSize: storedFile.fileSize,
+      checksum: storedFile.checksum
+    });
+
+    await this.repository.saveAttachment(newAttachment);
+
+    // Re-queue OCR on the new combined document
+    const ocrId = uuidv4();
+    const ocrRecord = new OCRRecord({
+      id: ocrId,
+      letterId,
+      attachmentId: newAttachment.id,
+      status: 'PENDING'
+    });
+    await this.repository.saveOCRRecord(ocrRecord);
+    await this.queueService.enqueueOCRJob(letterId, newAttachment.id);
+
+    return newAttachment;
+  }
 }
+

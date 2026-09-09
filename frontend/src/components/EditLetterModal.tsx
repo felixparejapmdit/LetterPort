@@ -74,6 +74,7 @@ export default function EditLetterModal({
   });
 
   const [tagInput, setTagInput] = useState('');
+  const editTagInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -465,7 +466,10 @@ export default function EditLetterModal({
             <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
               Tags
             </label>
-            <div className="p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg space-y-1.5">
+            <div 
+              onClick={() => editTagInputRef.current?.focus()}
+              className="p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg space-y-1.5 cursor-text focus-within:border-slate-400 dark:focus-within:border-slate-500 focus-within:ring-1 focus-within:ring-slate-400/20"
+            >
               <div className="flex flex-wrap gap-1 min-h-[22px]">
                 {formData.tags.map((tag) => (
                   <span
@@ -475,7 +479,10 @@ export default function EditLetterModal({
                     <span>#{tag}</span>
                     <button
                       type="button"
-                      onClick={() => handleRemoveTag(tag)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveTag(tag);
+                      }}
                       className="hover:text-blue-900 dark:hover:text-blue-100 ml-0.5"
                     >
                       <X className="w-2.5 h-2.5" />
@@ -484,14 +491,15 @@ export default function EditLetterModal({
                 ))}
               </div>
               <div className="flex items-center space-x-2">
-                <Tag className="w-3 h-3 text-slate-400" />
+                <Tag className="w-3 h-3 text-slate-400 shrink-0" />
                 <input
+                  ref={editTagInputRef}
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleAddTag}
                   placeholder="Type tag and press Enter"
-                  className="w-full text-xs bg-transparent border-none text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+                  className="tag-input w-full text-xs bg-transparent border-0 border-none text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-0 p-0 m-0 shadow-none ring-0 outline-none"
                 />
               </div>
             </div>

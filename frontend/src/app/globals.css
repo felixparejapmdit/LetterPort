@@ -565,10 +565,10 @@ html.dark .theme-notion [class*="border-slate-700"],
 }
 
 /* 6. Form Controls & Inputs */
-[data-design="notion"] input,
+[data-design="notion"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]),
 [data-design="notion"] select,
 [data-design="notion"] textarea,
-.theme-notion input,
+.theme-notion input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]),
 .theme-notion select,
 .theme-notion textarea {
   border-radius: 6px !important;
@@ -578,32 +578,96 @@ html.dark .theme-notion [class*="border-slate-700"],
   font-size: 13px !important;
 }
 
-[data-design="notion"] input:focus,
+[data-design="notion"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]):focus,
 [data-design="notion"] select:focus,
 [data-design="notion"] textarea:focus,
-.theme-notion input:focus,
+.theme-notion input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]):focus,
 .theme-notion select:focus {
   outline: 1px solid #232323 !important;
   border-color: #232323 !important;
   box-shadow: 0 0 0 1px #232323 !important;
 }
 
-.dark[data-design="notion"] input,
+.dark[data-design="notion"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]),
 .dark[data-design="notion"] select,
 .dark[data-design="notion"] textarea,
-.theme-notion.dark input,
+.theme-notion.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]),
 .theme-notion.dark select {
   background-color: #242424 !important;
   border-color: #333333 !important;
   color: #e3e2e0 !important;
 }
 
-.dark[data-design="notion"] input:focus,
+.dark[data-design="notion"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]):focus,
 .dark[data-design="notion"] select:focus,
-.theme-notion.dark input:focus {
+.theme-notion.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not(.tag-input):not([class*="tag-input"]):not([class*="border-none"]):not([class*="border-0"]):not([class*="bg-transparent"]):focus {
   outline: 1px solid #ffffff !important;
   border-color: #ffffff !important;
   box-shadow: 0 0 0 1px #ffffff !important;
+}
+
+/* Explicit Tag Inputs & Borderless Inline Inputs Resets */
+[data-design="notion"] .tag-input,
+[data-design="notion"] input.tag-input,
+[data-design="notion"] input[class*="tag-input"],
+[data-design="notion"] input[class*="border-none"],
+[data-design="notion"] input[class*="border-0"],
+[data-design="notion"] input[class*="bg-transparent"],
+.theme-notion .tag-input,
+.theme-notion input.tag-input,
+.theme-notion input[class*="tag-input"],
+.theme-notion input[class*="border-none"],
+.theme-notion input[class*="border-0"],
+.theme-notion input[class*="bg-transparent"],
+.dark [data-design="notion"] .tag-input,
+.dark [data-design="notion"] input.tag-input,
+.dark [data-design="notion"] input[class*="tag-input"],
+.dark [data-design="notion"] input[class*="border-none"],
+.dark [data-design="notion"] input[class*="border-0"],
+.dark [data-design="notion"] input[class*="bg-transparent"],
+.theme-notion.dark .tag-input,
+.theme-notion.dark input.tag-input,
+.theme-notion.dark input[class*="tag-input"],
+.theme-notion.dark input[class*="border-none"],
+.theme-notion.dark input[class*="border-0"],
+.theme-notion.dark input[class*="bg-transparent"] {
+  border: 0 none transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+[data-design="notion"] .tag-input:focus,
+[data-design="notion"] input.tag-input:focus,
+[data-design="notion"] input[class*="tag-input"]:focus,
+[data-design="notion"] input[class*="border-none"]:focus,
+[data-design="notion"] input[class*="border-0"]:focus,
+[data-design="notion"] input[class*="bg-transparent"]:focus,
+.theme-notion .tag-input:focus,
+.theme-notion input.tag-input:focus,
+.theme-notion input[class*="tag-input"]:focus,
+.theme-notion input[class*="border-none"]:focus,
+.theme-notion input[class*="border-0"]:focus,
+.theme-notion input[class*="bg-transparent"]:focus,
+.dark [data-design="notion"] .tag-input:focus,
+.dark [data-design="notion"] input.tag-input:focus,
+.dark [data-design="notion"] input[class*="tag-input"]:focus,
+.dark [data-design="notion"] input[class*="border-none"]:focus,
+.dark [data-design="notion"] input[class*="border-0"]:focus,
+.dark [data-design="notion"] input[class*="bg-transparent"]:focus,
+.theme-notion.dark .tag-input:focus,
+.theme-notion.dark input.tag-input:focus,
+.theme-notion.dark input[class*="tag-input"]:focus,
+.theme-notion.dark input[class*="border-none"]:focus,
+.theme-notion.dark input[class*="border-0"]:focus,
+.theme-notion.dark input[class*="bg-transparent"]:focus {
+  border: 0 none transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  background: transparent !important;
 }
 
 /* 7. Notion Database Table View */

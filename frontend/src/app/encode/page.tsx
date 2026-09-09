@@ -30,6 +30,7 @@ import {
 export default function EncodePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   const [type, setType] = useState<string>('INCOMING');
   const [referenceNumber, setReferenceNumber] = useState('');
@@ -445,7 +446,10 @@ export default function EncodePage() {
             <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Categories & Tags (press Enter to add)
             </label>
-            <div className="flex flex-wrap gap-1 p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg min-h-[34px] items-center">
+            <div 
+              onClick={() => tagInputRef.current?.focus()}
+              className="flex flex-wrap gap-1 p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg min-h-[34px] items-center cursor-text focus-within:border-slate-400 dark:focus-within:border-slate-500 focus-within:ring-1 focus-within:ring-slate-400/20"
+            >
               {tags.map((t) => (
                 <span
                   key={t}
@@ -454,7 +458,10 @@ export default function EncodePage() {
                   #{t}
                   <button
                     type="button"
-                    onClick={() => handleRemoveTag(t)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveTag(t);
+                    }}
                     className="hover:text-rose-600 dark:hover:text-rose-400"
                   >
                     <X className="w-2.5 h-2.5" />
@@ -462,12 +469,13 @@ export default function EncodePage() {
                 </span>
               ))}
               <input
+                ref={tagInputRef}
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleAddTag}
                 placeholder={tags.length === 0 ? "e.g. invoice, finance, notice..." : ""}
-                className="flex-1 bg-transparent border-none text-xs focus:outline-none text-slate-700 dark:text-slate-200 min-w-[100px]"
+                className="tag-input flex-1 bg-transparent border-0 border-none text-xs focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-200 min-w-[100px] p-0 m-0 shadow-none ring-0 outline-none"
               />
             </div>
           </div>

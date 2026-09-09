@@ -960,71 +960,7 @@ function SettingsContent() {
               </label>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Default Modern Card */}
-                <div
-                  onClick={() => {
-                    setDesignTheme('default');
-                    setNotification({ type: 'success', message: 'Switched to LetterPort Modern enterprise layout.' });
-                  }}
-                  className={`theme-card-modern cursor-pointer rounded-2xl p-5 border-2 transition-all relative ${
-                    designTheme === 'default'
-                      ? 'border-blue-600 bg-blue-50/20 dark:bg-blue-950/20 shadow-md ring-2 ring-blue-500/20'
-                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-xl bg-blue-600 text-white">
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">LetterPort Modern</h3>
-                        <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">Default Enterprise Theme</span>
-                      </div>
-                    </div>
-                    {designTheme === 'default' && (
-                      <span className="flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/60 px-2.5 py-1 rounded-full">
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Active</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                    Vibrant modern enterprise layout with soft multi-level drop shadows, rounded container cards, vivid status badges, and polished glassmorphic headers.
-                  </p>
-
-                  {/* Visual Mini Mockup */}
-                  <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="h-2 w-20 bg-blue-500 rounded-full"></div>
-                      <div className="h-4 w-12 bg-emerald-100 dark:bg-emerald-950 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 rounded-full flex items-center justify-center">Active</div>
-                    </div>
-                    <div className="h-2 w-32 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                    <div className="flex gap-1.5 pt-1">
-                      <div className="h-5 w-14 bg-blue-600 rounded-lg text-[9px] font-bold text-white flex items-center justify-center">Button</div>
-                      <div className="h-5 w-14 bg-slate-100 dark:bg-slate-800 rounded-lg text-[9px] font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center">Action</div>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      setDesignTheme('default');
-                      setNotification({ type: 'success', message: 'Switched to LetterPort Modern enterprise layout.' });
-                    }}
-                    className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                      designTheme === 'default'
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
-                        : 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {designTheme === 'default' ? 'Current Design Active' : 'Use LetterPort Modern'}
-                  </button>
-                </div>
-
-                {/* Notion Minimalist Card */}
+                {/* Notion Minimalist Card (Default) */}
                 <div
                   onClick={() => {
                     setDesignTheme('notion');
@@ -1043,7 +979,7 @@ function SettingsContent() {
                       </div>
                       <div>
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white">Notion Minimalist</h3>
-                        <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">Clean Workspace Design</span>
+                        <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Default System Theme</span>
                       </div>
                     </div>
                     {designTheme === 'notion' && (
@@ -1085,6 +1021,70 @@ function SettingsContent() {
                     }`}
                   >
                     {designTheme === 'notion' ? 'Current Design Active' : 'Use Notion Minimalist'}
+                  </button>
+                </div>
+
+                {/* Default Modern Card */}
+                <div
+                  onClick={() => {
+                    setDesignTheme('default');
+                    setNotification({ type: 'success', message: 'Switched to LetterPort Modern enterprise layout.' });
+                  }}
+                  className={`theme-card-modern cursor-pointer rounded-2xl p-5 border-2 transition-all relative ${
+                    designTheme === 'default'
+                      ? 'border-blue-600 bg-blue-50/20 dark:bg-blue-950/20 shadow-md ring-2 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-xl bg-blue-600 text-white">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">LetterPort Modern</h3>
+                        <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">Alternative Enterprise Theme</span>
+                      </div>
+                    </div>
+                    {designTheme === 'default' && (
+                      <span className="flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/60 px-2.5 py-1 rounded-full">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Active</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                    Vibrant modern enterprise layout with soft multi-level drop shadows, rounded container cards, vivid status badges, and polished glassmorphic headers.
+                  </p>
+
+                  {/* Visual Mini Mockup */}
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="h-2 w-20 bg-blue-500 rounded-full"></div>
+                      <div className="h-4 w-12 bg-emerald-100 dark:bg-emerald-950 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 rounded-full flex items-center justify-center">Active</div>
+                    </div>
+                    <div className="h-2 w-32 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                    <div className="flex gap-1.5 pt-1">
+                      <div className="h-5 w-14 bg-blue-600 rounded-lg text-[9px] font-bold text-white flex items-center justify-center">Button</div>
+                      <div className="h-5 w-14 bg-slate-100 dark:bg-slate-800 rounded-lg text-[9px] font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center">Action</div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setDesignTheme('default');
+                      setNotification({ type: 'success', message: 'Switched to LetterPort Modern enterprise layout.' });
+                    }}
+                    className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      designTheme === 'default'
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                        : 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {designTheme === 'default' ? 'Current Design Active' : 'Use LetterPort Modern'}
                   </button>
                 </div>
               </div>

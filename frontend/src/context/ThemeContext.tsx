@@ -18,7 +18,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [colorMode, setColorModeState] = useState<ColorMode>('light');
-  const [designTheme, setDesignThemeState] = useState<DesignTheme>('default');
+  const [designTheme, setDesignThemeState] = useState<DesignTheme>('notion');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -40,13 +40,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // 2. Design Theme initialization ('default' | 'notion')
-    const storedDesign = (localStorage.getItem('letterport_design_theme') as DesignTheme) || 'default';
+    // 2. Design Theme initialization ('notion' default | 'default')
+    const storedDesign = (localStorage.getItem('letterport_design_theme') as DesignTheme) || 'notion';
     setDesignThemeState(storedDesign);
     document.documentElement.setAttribute('data-design', storedDesign);
     if (typeof document !== 'undefined' && document.body) {
       document.body.setAttribute('data-design', storedDesign);
-      if (storedDesign === 'notion') {
+      if (storedDesign !== 'default') {
         document.documentElement.classList.add('theme-notion');
         document.body.classList.add('theme-notion');
       } else {

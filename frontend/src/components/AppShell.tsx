@@ -9,14 +9,15 @@ import { useTheme } from '@/context/ThemeContext';
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
-  const { designTheme } = useTheme();
+  const { designTheme, colorMode } = useTheme();
+  const isDark = colorMode === 'dark';
 
   if (isLoginPage) {
     return (
       <div 
         className={`min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-0 m-0 overflow-x-hidden ${
           designTheme === 'notion' ? 'theme-notion' : ''
-        }`}
+        } ${isDark ? 'dark' : ''}`}
         data-design={designTheme}
       >
         {children}
@@ -27,7 +28,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={`min-h-screen flex flex-col transition-colors ${
-        designTheme === 'notion' ? 'theme-notion bg-[#f7f6f3] dark:bg-[#191919]' : 'bg-slate-50 dark:bg-slate-950'
+        designTheme === 'notion' ? 'theme-notion' : ''
+      } ${isDark ? 'dark' : ''} ${
+        designTheme === 'notion'
+          ? (isDark ? 'bg-[#191919] text-[#d4d4d4]' : 'bg-[#f7f6f3] text-[#37352f]')
+          : (isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800')
       }`}
       data-design={designTheme}
     >

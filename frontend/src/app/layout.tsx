@@ -39,6 +39,8 @@ export default function RootLayout({
                 document.documentElement.setAttribute('data-design', design);
                 if (design === 'notion') {
                   document.documentElement.classList.add('theme-notion');
+                } else {
+                  document.documentElement.classList.remove('theme-notion');
                 }
               } catch (_) {}
             `,

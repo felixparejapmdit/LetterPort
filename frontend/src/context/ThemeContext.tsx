@@ -30,8 +30,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     if (initialColor === 'dark') {
       document.documentElement.classList.add('dark');
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.add('dark');
+      }
     } else {
       document.documentElement.classList.remove('dark');
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.remove('dark');
+      }
     }
 
     // 2. Design Theme initialization ('default' | 'notion')
@@ -56,9 +62,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setColorModeState(mode);
     if (mode === 'dark') {
       document.documentElement.classList.add('dark');
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.add('dark');
+      }
       localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.remove('dark');
+      }
       localStorage.setItem('theme', 'light');
     }
   };

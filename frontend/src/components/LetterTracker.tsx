@@ -73,15 +73,9 @@ export default function LetterTracker({ letter, ocrRecord }: LetterTrackerProps)
     <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <span>Letter Tracking</span>
-            <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900">
-              {letter.referenceNumber}
-            </span>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            Tracking Progress
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Current stage: <strong className="text-slate-800 dark:text-slate-200">{letter.status.replace('_', ' ')}</strong>
-          </p>
         </div>
 
         {letter.priority === 'URGENT' && (

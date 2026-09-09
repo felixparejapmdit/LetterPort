@@ -117,7 +117,7 @@ function LettersContent() {
             All Letters
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Find, filter, and manage correspondence archive.
+            Find, filter, and manage all your letters.
           </p>
         </div>
 
@@ -139,7 +139,7 @@ function LettersContent() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search subject, sender, receiver, VEM#..."
+            placeholder="Search by subject, sender, receiver, or VEM number..."
             className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
           />
         </form>
@@ -269,6 +269,7 @@ function LettersContent() {
             <table className="w-full text-left text-xs text-slate-700 dark:text-slate-200">
               <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
+                  <th className="px-2.5 py-2 w-10 text-center text-slate-400">#</th>
                   <th className="px-3.5 py-2">Reference No</th>
                   <th className="px-2.5 py-2">VEM No</th>
                   <th className="px-2.5 py-2">Type</th>
@@ -276,15 +277,18 @@ function LettersContent() {
                   <th className="px-2.5 py-2">Status</th>
                   <th className="px-2.5 py-2 hidden md:table-cell">From</th>
                   <th className="px-2.5 py-2 hidden lg:table-cell">To</th>
-                  <th className="px-2.5 py-2 hidden sm:table-cell">Date & SLA</th>
+                  <th className="px-2.5 py-2 hidden sm:table-cell">Dates & Due</th>
                   <th className="px-3.5 py-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                {displayedLetters.map((l) => {
+                {displayedLetters.map((l, index) => {
                   const isOverdue = l.dueDate && new Date().toISOString().split('T')[0] > l.dueDate && l.status !== 'PROCESSED' && l.status !== 'ARCHIVED';
                   return (
                     <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
+                      <td className="px-2.5 py-2 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                        {(page - 1) * PAGE_SIZE + index + 1}
+                      </td>
                       <td className="px-3.5 py-2 font-mono font-semibold text-xs whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <PriorityIcon priority={l.priority} />

@@ -39,8 +39,8 @@ export default function AccessMatrixPage() {
           </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             {isAdmin 
-              ? 'Modify the capability access view for Administrator and Staff User roles across every page, button, and action icon.'
-              : 'Review your granted system capabilities and role boundaries.'}
+              ? 'Choose what buttons and actions each user role can see and use across every page.'
+              : 'See what actions your account is allowed to perform.'}
           </p>
         </div>
 

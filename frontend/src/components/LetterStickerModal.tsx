@@ -301,7 +301,7 @@ export default function LetterStickerModal({ isOpen, letter, onClose }: LetterSt
                   <table className="w-full text-xs border border-slate-300 border-collapse">
                     <thead>
                       <tr className="bg-slate-100 text-slate-700">
-                        <th className="border border-slate-300 px-2 py-1 text-left w-12">Step</th>
+                        <th className="border border-slate-300 px-2 py-1 text-center w-14"># / Step</th>
                         <th className="border border-slate-300 px-2 py-1 text-left">Recipient / Office</th>
                         <th className="border border-slate-300 px-2 py-1 text-left w-24">Date Recv</th>
                         <th className="border border-slate-300 px-2 py-1 text-left">Action Taken</th>

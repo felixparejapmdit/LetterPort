@@ -114,18 +114,18 @@ function SettingsContent() {
   };
 
   const adminTabs = [
-    { id: 'general', label: 'General & Storage', icon: HardDrive, desc: 'System architecture, version & disk metrics' },
-    { id: 'users', label: 'User Accounts', icon: Users, desc: 'Manage user logins, avatars & account roles' },
-    { id: 'appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern styling & color modes' },
-    { id: 'matrix', label: 'Access Matrix', icon: Shield, desc: 'Permissions & action buttons editor' },
-    { id: 'format', label: 'Reference Format', icon: Settings2, desc: 'Prefix & sequential numbering pattern' },
-    { id: 'backup', label: 'Backup & Recovery', icon: Archive, desc: 'Export, restore & sample letter fixtures' },
+    { id: 'general', label: 'General & Storage', icon: HardDrive, desc: 'System version, health, and disk storage' },
+    { id: 'users', label: 'User Accounts', icon: Users, desc: 'Manage user accounts, passwords, and roles' },
+    { id: 'appearance', label: 'Theme & Design', icon: Palette, desc: 'Choose your preferred layout and color theme' },
+    { id: 'matrix', label: 'Access Matrix', icon: Shield, desc: 'Control who can use buttons and features' },
+    { id: 'format', label: 'Reference Format', icon: Settings2, desc: 'Letter reference number format' },
+    { id: 'backup', label: 'Backup & Recovery', icon: Archive, desc: 'Backup, restore, and sample letters' },
   ];
 
   const userTabs = [
-    { id: 'profile', label: 'My Profile & Avatar', icon: Key, desc: 'Personal password, avatar & credentials' },
-    { id: 'appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern styling & color modes' },
-    { id: 'matrix', label: 'Access Permissions', icon: Shield, desc: 'View granted capabilities' },
+    { id: 'profile', label: 'My Profile & Avatar', icon: Key, desc: 'Change your password and profile photo' },
+    { id: 'appearance', label: 'Theme & Design', icon: Palette, desc: 'Choose your preferred layout and color theme' },
+    { id: 'matrix', label: 'Access Permissions', icon: Shield, desc: 'See what features your account can access' },
   ];
 
   const currentTabs = isAdmin ? adminTabs : userTabs;
@@ -432,7 +432,7 @@ function SettingsContent() {
                     </span>
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Zero-config deployment mode. Storage and databases are automatically mapped to local directories.
+                    Automatic setup. All documents and database files are safely stored on your system.
                   </p>
                 </div>
               </div>
@@ -591,6 +591,7 @@ function SettingsContent() {
             <table className="w-full text-left text-xs sm:text-sm text-slate-700 dark:text-slate-200">
               <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
+                  <th className="px-3 py-3.5 w-12 text-center text-slate-400">#</th>
                   <th className="px-5 py-3.5">Username</th>
                   <th className="px-4 py-3.5">Role</th>
                   <th className="px-4 py-3.5">Password</th>
@@ -598,8 +599,11 @@ function SettingsContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {users.map((u) => (
+                {users.map((u, idx) => (
                   <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="px-3 py-3.5 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                      {idx + 1}
+                    </td>
                     <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-white">
                       <div className="flex items-center gap-3">
                         <UserAvatar user={u} size="sm" showBadge />

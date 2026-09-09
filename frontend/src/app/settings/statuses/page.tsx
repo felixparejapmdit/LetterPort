@@ -149,10 +149,10 @@ export default function StatusesManagementPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Layers className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            Document Statuses Management
+            Letter Statuses
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Manage lifecycle statuses for tracking document progression across LetterPort.
+            Manage status steps (like Received, In Review, Completed) to track your letters.
           </p>
         </div>
 
@@ -185,6 +185,7 @@ export default function StatusesManagementPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
+                <th className="py-2.5 px-3 w-12 text-center text-slate-400">#</th>
                 <th className="py-2.5 px-3">Status Code</th>
                 <th className="py-2.5 px-3">Label</th>
                 <th className="py-2.5 px-3">Description</th>
@@ -196,19 +197,22 @@ export default function StatusesManagementPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={7} className="py-6 text-center text-slate-400 text-xs">
                     Loading statuses...
                   </td>
                 </tr>
               ) : paginatedStatuses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={7} className="py-6 text-center text-slate-400 text-xs">
                     No document statuses found. Click "New Status" to create one.
                   </td>
                 </tr>
               ) : (
-                paginatedStatuses.map((s) => (
+                paginatedStatuses.map((s, idx) => (
                   <tr key={s.id || s.code} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                      {(page - 1) * PAGE_SIZE + idx + 1}
+                    </td>
                     <td className="py-2 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
                       {s.code}
                     </td>

@@ -148,10 +148,10 @@ export default function RolesManagementPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            Roles & Permissions Management
+            User Roles
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Configure system and custom organizational roles for security, audits, and access levels.
+            Create and manage user roles to control what each person can do in the system.
           </p>
         </div>
 
@@ -193,6 +193,7 @@ export default function RolesManagementPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
+                <th className="py-2.5 px-3 w-12 text-center text-slate-400">#</th>
                 <th className="py-2.5 px-3">Role Identifier</th>
                 <th className="py-2.5 px-3">Display Label</th>
                 <th className="py-2.5 px-3">Description</th>
@@ -203,23 +204,26 @@ export default function RolesManagementPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
                     Loading roles...
                   </td>
                 </tr>
               ) : paginatedRoles.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
                     No roles found. Click "New Role" to add one.
                   </td>
                 </tr>
               ) : (
-                paginatedRoles.map((r) => {
+                paginatedRoles.map((r, idx) => {
                   const isSys = Boolean(r.isSystem || r.code === 'admin' || r.code === 'user' || r.name === 'admin' || r.name === 'user');
                   const roleCode = r.code || r.name;
                   const roleLabel = r.label || r.name;
                   return (
                     <tr key={r.id || roleCode} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                      <td className="py-2 px-3 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                        {(page - 1) * PAGE_SIZE + idx + 1}
+                      </td>
                       <td className="py-2 px-3 font-mono font-bold text-purple-600 dark:text-purple-400">
                         {roleCode}
                       </td>

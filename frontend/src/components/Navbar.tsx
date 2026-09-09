@@ -71,26 +71,26 @@ export default function Navbar() {
     {
       title: 'Classifications',
       items: [
-        { href: '/settings/statuses', label: 'Statuses', icon: Layers, desc: 'Manage workflow statuses' },
-        { href: '/settings/priorities', label: 'Priorities', icon: AlertTriangle, desc: 'Urgency & SLA tiers' },
-        { href: '/settings/types', label: 'Letter Types', icon: FolderTree, desc: 'Classification streams' },
+        { href: '/settings/statuses', label: 'Statuses', icon: Layers, desc: 'Statuses for your letters' },
+        { href: '/settings/priorities', label: 'Priorities', icon: AlertTriangle, desc: 'Urgency and priority levels' },
+        { href: '/settings/types', label: 'Letter Types', icon: FolderTree, desc: 'Incoming, outgoing, and other types' },
       ]
     },
     {
       title: 'Access Control',
       items: [
-        { href: '/settings/access-matrix', label: 'Access Matrix', icon: Shield, desc: 'Buttons & role permissions' },
-        { href: '/settings/roles', label: 'Roles Management', icon: ShieldCheck, desc: 'Define & assign roles' },
-        { href: '/settings?tab=users', label: 'User Accounts', icon: Users, desc: 'Staff & admin logins' },
+        { href: '/settings/access-matrix', label: 'Access Matrix', icon: Shield, desc: 'Who can see and use buttons' },
+        { href: '/settings/roles', label: 'Roles Management', icon: ShieldCheck, desc: 'User roles and permissions' },
+        { href: '/settings?tab=users', label: 'User Accounts', icon: Users, desc: 'Manage user accounts' },
       ]
     },
     {
       title: 'System & Design',
       items: [
-        { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern theme' },
-        { href: '/settings?tab=format', label: 'Reference Format', icon: SlidersHorizontal, desc: 'Code numbering rules' },
-        { href: '/settings?tab=general', label: 'Storage & Hardware', icon: HardDrive, desc: 'Volume & database' },
-        { href: '/settings?tab=backup', label: 'Backup & Recovery', icon: FileJson, desc: 'Database export/import' },
+        { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Theme and layout style' },
+        { href: '/settings?tab=format', label: 'Reference Format', icon: SlidersHorizontal, desc: 'Letter reference number format' },
+        { href: '/settings?tab=general', label: 'Storage & Hardware', icon: HardDrive, desc: 'Disk space and system info' },
+        { href: '/settings?tab=backup', label: 'Backup & Recovery', icon: FileJson, desc: 'Backup and restore your data' },
       ]
     }
   ];
@@ -99,9 +99,9 @@ export default function Navbar() {
     {
       title: 'My Account',
       items: [
-        { href: '/settings?tab=profile', label: 'My Profile & Avatar', icon: Key, desc: 'Update password & avatar' },
-        { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Notion vs Modern theme' },
-        { href: '/settings/access-matrix', label: 'Access Matrix', icon: Shield, desc: 'View granted capabilities' },
+        { href: '/settings?tab=profile', label: 'My Profile & Avatar', icon: Key, desc: 'Change password and photo' },
+        { href: '/settings?tab=appearance', label: 'Theme & Design', icon: Palette, desc: 'Theme and layout style' },
+        { href: '/settings/access-matrix', label: 'Access Matrix', icon: Shield, desc: 'See features you can access' },
       ]
     }
   ];

@@ -183,10 +183,10 @@ export default function EncodePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Encode Letter
+            Add Letter
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Enter letter metadata, contacts with auto-suggest, and attach multiple scans or PDFs.
+            Fill in letter details, choose sender and receiver, and attach your files or scans.
           </p>
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function EncodePage() {
         {/* Type / Direction Selector - Compact */}
         <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            Letter Classification Type
+            Letter Type
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {types.length > 0 ? (
@@ -255,7 +255,7 @@ export default function EncodePage() {
         {/* Details Card - Compact */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
           <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
-            Letter Information
+            Letter Details
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
@@ -405,7 +405,7 @@ export default function EncodePage() {
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Target Due Date (SLA)
+                Target Due Date
               </label>
               <input
                 type="date"
@@ -486,7 +486,7 @@ export default function EncodePage() {
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
             <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              Attach Document Files ({selectedFiles.length})
+              Attach Documents ({selectedFiles.length})
             </h2>
             <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
@@ -529,7 +529,7 @@ export default function EncodePage() {
                 Click to browse files, or <span className="text-blue-600 dark:text-blue-400">drag multiple files here</span>
               </p>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                Supports PDF, JPG, PNG, and TIFF (multiple uploads supported)
+                Supports PDF and image files (you can upload multiple files)
               </p>
             </div>
           </div>

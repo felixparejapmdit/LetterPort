@@ -119,7 +119,7 @@ function SearchContent() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by subject, sender, receiver, VEM#, or words in document..."
+            placeholder="Search by subject, sender, receiver, VEM number, or words inside document..."
             className="w-full pl-12 pr-24 py-3.5 text-base bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition"
           />
           <div className="absolute right-3 flex items-center gap-2">
@@ -269,7 +269,7 @@ function SearchContent() {
           <ul className="list-disc list-inside space-y-1 text-slate-500 dark:text-slate-400 pl-1">
             <li>Type any reference number (like <code>LP-IN-2026</code>) or VEM Number.</li>
             <li>Results appear automatically as you type without having to press enter.</li>
-            <li>Every document scan is indexed by automated OCR, letting you locate letters using any word inside the PDF or image.</li>
+            <li>Document text is read automatically, so you can find any letter just by searching for words inside the PDF or image.</li>
           </ul>
         </div>
       )}

@@ -128,7 +128,7 @@ export default function DashboardPage() {
           <p className="text-xl font-bold text-slate-900 dark:text-white mt-1.5 group-hover:text-blue-600 transition-colors">
             {loading ? '-' : stats?.totalLetters ?? 0}
           </p>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">All registered</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">All letters</span>
         </Link>
 
         {/* Incoming */}
@@ -146,7 +146,7 @@ export default function DashboardPage() {
           <p className="text-xl font-bold text-emerald-900 dark:text-emerald-300 mt-1.5 group-hover:text-emerald-600 transition-colors">
             {loading ? '-' : stats?.incomingLetters ?? 0}
           </p>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">Received docs</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">Received letters</span>
         </Link>
 
         {/* Outgoing */}
@@ -164,7 +164,7 @@ export default function DashboardPage() {
           <p className="text-xl font-bold text-indigo-900 dark:text-indigo-300 mt-1.5 group-hover:text-indigo-600 transition-colors">
             {loading ? '-' : stats?.outgoingLetters ?? 0}
           </p>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">Sent dispatches</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">Sent letters</span>
         </Link>
 
         {/* Urgent */}
@@ -182,7 +182,7 @@ export default function DashboardPage() {
           <p className="text-xl font-bold text-rose-900 dark:text-rose-300 mt-1.5 group-hover:text-rose-600 transition-colors">
             {loading ? '-' : stats?.urgentLetters ?? 0}
           </p>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">Immediate action</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">Needs fast reply</span>
         </Link>
 
         {/* Overdue */}
@@ -200,7 +200,7 @@ export default function DashboardPage() {
           <p className="text-xl font-bold text-red-900 dark:text-red-300 mt-1.5 group-hover:text-red-600 transition-colors">
             {loading ? '-' : stats?.overdueLetters ?? 0}
           </p>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">Past SLA target</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">Past due date</span>
         </Link>
 
         {/* Reading (OCR Scanning) */}
@@ -218,7 +218,7 @@ export default function DashboardPage() {
           <p className="text-xl font-bold text-amber-900 dark:text-amber-300 mt-1.5 group-hover:text-amber-600 transition-colors">
             {loading ? '-' : stats?.pendingOCR ?? 0}
           </p>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">Reading text</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">Reading document text</span>
         </Link>
       </div>
 
@@ -234,7 +234,7 @@ export default function DashboardPage() {
             </div>
             <h2 className="text-sm font-bold text-white">Add a New Letter</h2>
             <p className="text-[11px] text-blue-100 mt-0.5">
-              Upload multiple scans or PDFs. Automatic indexing & OCR.
+              Upload scans or PDF files. Text inside is read automatically.
             </p>
           </div>
           <div className="flex items-center text-[11px] font-bold text-blue-100 mt-3 group-hover:translate-x-1 transition-transform">
@@ -253,7 +253,7 @@ export default function DashboardPage() {
             </div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">Live Search</h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Search reference, VEM-Number, or extracted OCR text in real-time.
+              Search by reference number, sender, receiver, or words inside any document.
             </p>
           </div>
           <div className="flex items-center text-[11px] font-bold text-blue-600 dark:text-blue-400 mt-3 group-hover:translate-x-1 transition-transform">
@@ -272,7 +272,7 @@ export default function DashboardPage() {
             </div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">View All Letters</h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Filter by sender, dates, and preview documents side-by-side.
+              Browse, filter by date or sender, and preview letters.
             </p>
           </div>
           <div className="flex items-center text-[11px] font-bold text-blue-600 dark:text-blue-400 mt-3 group-hover:translate-x-1 transition-transform">
@@ -332,21 +332,25 @@ export default function DashboardPage() {
               <table className="w-full text-left text-xs text-slate-700 dark:text-slate-200">
                 <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                   <tr>
+                    <th className="px-2.5 py-2 w-10 text-center text-slate-400">#</th>
                     <th className="px-3.5 py-2">Reference No</th>
                     <th className="px-2.5 py-2">VEM No</th>
                     <th className="px-2.5 py-2">Type</th>
                     <th className="px-3.5 py-2">Subject</th>
                     <th className="px-2.5 py-2">Status</th>
                     <th className="px-2.5 py-2 hidden md:table-cell">From / To</th>
-                    <th className="px-2.5 py-2 hidden sm:table-cell">Date & SLA</th>
+                    <th className="px-2.5 py-2 hidden sm:table-cell">Dates & Due</th>
                     <th className="px-3.5 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {recentLetters.map((l) => {
+                  {recentLetters.map((l, index) => {
                     const isOverdue = l.dueDate && new Date().toISOString().split('T')[0] > l.dueDate && l.status !== 'PROCESSED' && l.status !== 'ARCHIVED';
                     return (
                       <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
+                        <td className="px-2.5 py-2 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                          {(page - 1) * PAGE_SIZE + index + 1}
+                        </td>
                         <td className="px-3.5 py-2 font-mono font-semibold text-xs whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             <PriorityIcon priority={l.priority} />

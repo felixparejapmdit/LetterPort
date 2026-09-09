@@ -196,18 +196,6 @@ export default function LetterDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-          {/* Tracking Drawer Button */}
-          {hasPermission('detail_track') && (
-            <button
-              onClick={() => setIsTrackingOpen(true)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-semibold shadow-2xs transition"
-              title="Open tracking drawer"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              <span>Track</span>
-            </button>
-          )}
-
           {/* QR Sticker / Routing Slip Button */}
           {hasPermission('detail_sticker') && (
             <button
@@ -301,7 +289,7 @@ export default function LetterDetailPage() {
           {letter.priority === 'URGENT' && (
             <div className="flex items-center space-x-2.5 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold shadow-sm">
               <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-              <span>Urgent Letter: Requires prompt attention or fast reply.</span>
+              <span>Urgent: This letter needs prompt attention or reply.</span>
             </div>
           )}
 
@@ -312,7 +300,7 @@ export default function LetterDetailPage() {
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                Letter Information
+                Letter Details
               </h3>
 
               {/* Status Changer */}
@@ -340,25 +328,13 @@ export default function LetterDetailPage() {
             </div>
 
             <div className="space-y-3 text-xs">
-              {letter.vemNumber && (
-                <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/60">
-                  <span className="text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-1">
-                    <Hash className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    VEM Number:
-                  </span>
-                  <span className="font-mono font-bold text-emerald-900 dark:text-emerald-200 text-xs">
-                    {letter.vemNumber}
-                  </span>
-                </div>
-              )}
-
               <div>
-                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">From (Sender):</span>
+                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">From:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{letter.sender}</span>
               </div>
 
               <div>
-                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">To (Receiver):</span>
+                <span className="text-slate-400 dark:text-slate-500 block mb-0.5">To:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{letter.recipient}</span>
               </div>
 

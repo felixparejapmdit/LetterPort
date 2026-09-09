@@ -148,10 +148,10 @@ export default function LetterTypesManagementPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <FolderTree className="w-5 h-5 text-indigo-500" />
-            Letter Types Management
+            Letter Types
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Define classification streams (e.g. Incoming, Outgoing, Internal, Memo) for document handling.
+            Add or edit letter types (like Incoming, Outgoing, Memo) to organize your letters.
           </p>
         </div>
 
@@ -184,6 +184,7 @@ export default function LetterTypesManagementPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
+                <th className="py-2.5 px-3 w-12 text-center text-slate-400">#</th>
                 <th className="py-2.5 px-3">Type Code</th>
                 <th className="py-2.5 px-3">Display Label</th>
                 <th className="py-2.5 px-3">Description</th>
@@ -195,19 +196,22 @@ export default function LetterTypesManagementPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={7} className="py-6 text-center text-slate-400 text-xs">
                     Loading letter types...
                   </td>
                 </tr>
               ) : paginatedTypes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={7} className="py-6 text-center text-slate-400 text-xs">
                     No letter types defined. Click "New Type" to create one.
                   </td>
                 </tr>
               ) : (
-                paginatedTypes.map((t) => (
+                paginatedTypes.map((t, idx) => (
                   <tr key={t.id || t.code} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                      {(page - 1) * PAGE_SIZE + idx + 1}
+                    </td>
                     <td className="py-2 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
                       {t.code}
                     </td>

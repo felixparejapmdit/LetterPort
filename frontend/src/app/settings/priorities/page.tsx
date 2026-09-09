@@ -153,10 +153,10 @@ export default function PrioritiesManagementPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            Document Priorities Management
+            Letter Priorities
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Configure urgency and SLA priority tiers used for document sorting and escalation.
+            Set priority levels (like Normal, High, Urgent) to show how quickly letters need attention.
           </p>
         </div>
 
@@ -189,6 +189,7 @@ export default function PrioritiesManagementPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
+                <th className="py-2.5 px-3 w-12 text-center text-slate-400">#</th>
                 <th className="py-2.5 px-3">Priority Code</th>
                 <th className="py-2.5 px-3">Display Label</th>
                 <th className="py-2.5 px-3">Description</th>
@@ -201,19 +202,22 @@ export default function PrioritiesManagementPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={8} className="py-6 text-center text-slate-400 text-xs">
                     Loading priorities...
                   </td>
                 </tr>
               ) : paginatedPriorities.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={8} className="py-6 text-center text-slate-400 text-xs">
                     No priorities found. Click "New Priority" to define one.
                   </td>
                 </tr>
               ) : (
-                paginatedPriorities.map((p) => (
+                paginatedPriorities.map((p, idx) => (
                   <tr key={p.id || p.code} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                      {(page - 1) * PAGE_SIZE + idx + 1}
+                    </td>
                     <td className="py-2 px-3 font-mono font-bold text-amber-600 dark:text-amber-400">
                       {p.code}
                     </td>

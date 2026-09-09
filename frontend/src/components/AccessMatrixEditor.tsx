@@ -190,7 +190,7 @@ export default function AccessMatrixEditor() {
       {savedSuccess && (
         <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-lg text-xs flex items-center gap-2 animate-fade-in">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-          <span>Access permissions updated successfully! Changes are active immediately.</span>
+          <span>Permissions saved! Changes take effect immediately.</span>
         </div>
       )}
 
@@ -198,7 +198,7 @@ export default function AccessMatrixEditor() {
         <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-lg text-xs flex items-center justify-between gap-2 animate-fade-in">
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span>You have unsaved permission modifications.</span>
+            <span>You have unsaved changes.</span>
           </div>
           <button
             onClick={handleSave}
@@ -237,6 +237,7 @@ export default function AccessMatrixEditor() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
+                <th className="px-2.5 py-2.5 w-12 text-center text-slate-400">#</th>
                 <th className="px-3.5 py-2.5 min-w-[200px]">Action / Button</th>
                 <th className="px-3 py-2.5 min-w-[120px]">Page</th>
                 <th className="px-3 py-2.5 min-w-[220px]">Function & Description</th>
@@ -268,14 +269,17 @@ export default function AccessMatrixEditor() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paginatedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={3 + roles.length} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={4 + roles.length} className="py-6 text-center text-slate-400 text-xs">
                     No matching actions found.
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((item) => {
+                paginatedItems.map((item, idx) => {
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="px-2.5 py-2 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                        {(page - 1) * PAGE_SIZE + idx + 1}
+                      </td>
                       {/* Action Name */}
                       <td className="px-3.5 py-2 font-semibold text-slate-900 dark:text-white">
                         <div className="flex items-center gap-1.5">

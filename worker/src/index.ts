@@ -1,8 +1,13 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import sqlite3 from 'sqlite3';
 import { createWorker } from 'tesseract.js';
+
+const execFileAsync = promisify(execFile);
 
 dotenv.config();
 
@@ -31,6 +36,90 @@ function getDb(): Promise<sqlite3.Database> {
       else resolve(db);
     });
   });
+}
+
+async function extractTextFromAttachment(filePath: string, mimeType?: string): Promise<{ text: string; confidence: number }> {
+  const lowerPath = filePath.toLowerCase();
+  const isPdf = mimeType === 'application/pdf' || lowerPath.endsWith('.pdf');
+
+  if (isPdf) {
+    // 1. Try fast pdftotext
+    try {
+      const { stdout } = await execFileAsync('pdftotext', ['-layout', filePath, '-'], { timeout: 15000 });
+      const cleanNative = (stdout || '').trim();
+      if (cleanNative.length > 30) {
+        return { text: cleanNative, confidence: 98 };
+      }
+    } catch {}
+
+    // 2. Render pages to PNG using pdftoppm
+    const tmpDir = os.tmpdir();
+    const prefixId = `worker_ocr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const outputPrefix = path.join(tmpDir, prefixId);
+    let generatedFiles: string[] = [];
+
+    try {
+      await execFileAsync('pdftoppm', ['-png', '-r', '150', filePath, outputPrefix], { timeout: 30000 });
+
+      const dirEntries = await fs.promises.readdir(tmpDir);
+      generatedFiles = dirEntries
+        .filter(f => f.startsWith(prefixId) && f.endsWith('.png'))
+        .sort()
+        .map(f => path.join(tmpDir, f));
+
+      if (generatedFiles.length > 0) {
+        let worker: any = null;
+        try {
+          worker = await createWorker(OCR_LANG);
+          const pageTexts: string[] = [];
+          let totalConfidence = 0;
+
+          const pagesToProcess = generatedFiles.slice(0, 10);
+          for (const imgPath of pagesToProcess) {
+            const { data } = await worker.recognize(imgPath);
+            const pageText = (data?.text || '').replace(/\r\n/g, '\n').trim();
+            if (pageText) pageTexts.push(pageText);
+            totalConfidence += (data?.confidence || 85);
+          }
+
+          const combined = pageTexts.join('\n\n--- Page Break ---\n\n').trim();
+          const avgConfidence = Math.round(totalConfidence / pagesToProcess.length) || 85;
+
+          return {
+            text: combined || '(No readable text detected in document image)',
+            confidence: combined ? avgConfidence : 0
+          };
+        } finally {
+          if (worker) {
+            try { await worker.terminate(); } catch {}
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn(`[Worker] pdftoppm or Tesseract rendering failed on ${filePath}:`, err?.message || err);
+    } finally {
+      for (const f of generatedFiles) {
+        try { await fs.promises.unlink(f); } catch {}
+      }
+    }
+  }
+
+  // Standard image recognition with Tesseract
+  let worker: any = null;
+  try {
+    worker = await createWorker(OCR_LANG);
+    const { data } = await worker.recognize(filePath);
+    const cleanedText = (data?.text || '').replace(/\r\n/g, '\n').trim();
+    const confidence = Math.round(data?.confidence || 85);
+    return {
+      text: cleanedText || '(No readable text detected)',
+      confidence
+    };
+  } finally {
+    if (worker) {
+      try { await worker.terminate(); } catch {}
+    }
+  }
 }
 
 async function processPendingOCR() {
@@ -80,13 +169,7 @@ async function processPendingOCR() {
       throw new Error(`Attachment file does not exist on disk: ${fullFilePath}`);
     }
 
-    // Run Tesseract
-    const worker = await createWorker(OCR_LANG);
-    const { data } = await worker.recognize(fullFilePath);
-    await worker.terminate();
-
-    const text = data.text.replace(/\r\n/g, '\n').trim() || '(No readable text detected)';
-    const confidence = Math.round(data.confidence) || 85;
+    const { text, confidence } = await extractTextFromAttachment(fullFilePath, row.mime_type);
 
     // Update to COMPLETED
     await new Promise((resolve, reject) => {

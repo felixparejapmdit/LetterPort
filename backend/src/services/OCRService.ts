@@ -1,6 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { createWorker } from 'tesseract.js';
+
+const execFileAsync = promisify(execFile);
 
 export interface OCRResult {
   text: string;
@@ -44,15 +49,7 @@ export class TesseractOCRService extends BaseOCRService {
     }
 
     if (isPdf) {
-      // For PDFs, first attempt fast native text extraction from text streams
-      const pdfText = await this.extractTextFromPdfDirectly(filePath);
-      if (pdfText && pdfText.trim().length > 20) {
-        return {
-          text: pdfText.trim(),
-          confidence: 95,
-          pageCount: 1
-        };
-      }
+      return await this.extractTextFromPdf(filePath);
     }
 
     // Run Tesseract OCR engine for raster images (PNG, JPEG, TIFF, BMP, WebP)
@@ -82,6 +79,95 @@ export class TesseractOCRService extends BaseOCRService {
         } catch {}
       }
     }
+  }
+
+  private async extractTextFromPdf(filePath: string): Promise<OCRResult> {
+    // 1. Try fast native text extraction using pdftotext
+    try {
+      const { stdout } = await execFileAsync('pdftotext', ['-layout', filePath, '-'], { timeout: 15000 });
+      const cleanNativeText = (stdout || '').trim();
+      if (cleanNativeText.length > 30) {
+        return {
+          text: cleanNativeText,
+          confidence: 98,
+          pageCount: 1
+        };
+      }
+    } catch {
+      // pdftotext not installed or failed, proceed to next strategies
+    }
+
+    // 2. Try raw text stream matching fallback
+    const directText = await this.extractTextFromPdfDirectly(filePath);
+    if (directText && directText.trim().length > 30) {
+      return {
+        text: directText.trim(),
+        confidence: 95,
+        pageCount: 1
+      };
+    }
+
+    // 3. For scanned / image-only PDFs, render pages to PNG using pdftoppm, then OCR with Tesseract
+    const tmpDir = os.tmpdir();
+    const prefixId = `ocr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const outputPrefix = path.join(tmpDir, prefixId);
+    let generatedFiles: string[] = [];
+
+    try {
+      await execFileAsync('pdftoppm', ['-png', '-r', '150', filePath, outputPrefix], { timeout: 30000 });
+
+      const dirEntries = await fs.promises.readdir(tmpDir);
+      generatedFiles = dirEntries
+        .filter(f => f.startsWith(prefixId) && f.endsWith('.png'))
+        .sort()
+        .map(f => path.join(tmpDir, f));
+
+      if (generatedFiles.length > 0) {
+        let worker: any = null;
+        try {
+          worker = await createWorker(this.lang);
+          const pageTexts: string[] = [];
+          let totalConfidence = 0;
+
+          // Limit processing to max 10 pages for performance
+          const pagesToProcess = generatedFiles.slice(0, 10);
+          for (const imgPath of pagesToProcess) {
+            const { data } = await worker.recognize(imgPath);
+            const pageText = (data?.text || '').replace(/\r\n/g, '\n').trim();
+            if (pageText) {
+              pageTexts.push(pageText);
+            }
+            totalConfidence += (data?.confidence || 85);
+          }
+
+          const combined = pageTexts.join('\n\n--- Page Break ---\n\n').trim();
+          const avgConfidence = Math.round(totalConfidence / pagesToProcess.length) || 85;
+
+          return {
+            text: combined || '(No readable text detected in document image)',
+            confidence: combined ? avgConfidence : 0,
+            pageCount: pagesToProcess.length
+          };
+        } finally {
+          if (worker) {
+            try { await worker.terminate(); } catch {}
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn(`[OCRService] pdftoppm or Tesseract rendering failed on ${filePath}:`, err?.message || err);
+    } finally {
+      // Clean up all temporary rendered PNG files
+      for (const f of generatedFiles) {
+        try { await fs.promises.unlink(f); } catch {}
+      }
+    }
+
+    return {
+      text: '[OCR Note: Text extraction completed with message: Check document clarity]',
+      confidence: 0,
+      pageCount: 1
+    };
   }
 
   private async extractTextFromSvg(filePath: string): Promise<string> {

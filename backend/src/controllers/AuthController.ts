@@ -86,9 +86,7 @@ export class AuthController {
 
       res.status(200).json({
         success: true,
-        data: {
-          user: user.toJSON()
-        }
+        data: user.toJSON()
       });
     } catch (err) {
       next(err);

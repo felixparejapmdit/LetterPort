@@ -21,6 +21,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+RUN apk add --no-cache poppler-utils
+
 COPY package*.json ./
 # Copy pre-installed production node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules

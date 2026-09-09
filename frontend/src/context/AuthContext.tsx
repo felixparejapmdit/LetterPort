@@ -10,9 +10,9 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAdmin: boolean;
-  permissions: Record<string, { admin: boolean; user: boolean }>;
+  permissions: Record<string, Record<string, boolean>>;
   hasPermission: (permissionId: string) => boolean;
-  savePermissions: (newPermissions: Record<string, { admin: boolean; user: boolean }>) => Promise<void>;
+  savePermissions: (newPermissions: Record<string, Record<string, boolean>>) => Promise<void>;
   updateUserAvatar: (avatarKey?: string) => void;
   login: (credentials: { username: string; password: string }) => Promise<void>;
   logout: () => void;
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [permissions, setPermissions] = useState<Record<string, { admin: boolean; user: boolean }>>(getDefaultPermissionsMap);
+  const [permissions, setPermissions] = useState<Record<string, Record<string, boolean>>>(getDefaultPermissionsMap);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -60,8 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Verify in background
             fetchCurrentUser(parsed.token)
               .then((freshUser) => {
-                setUser(freshUser);
-                localStorage.setItem('letterport_auth', JSON.stringify({ token: parsed.token, user: freshUser }));
+                if (freshUser && freshUser.id && freshUser.role) {
+                  setUser(freshUser);
+                  localStorage.setItem('letterport_auth', JSON.stringify({ token: parsed.token, user: freshUser }));
+                }
               })
               .catch(() => {});
           }
@@ -104,8 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = (permissionId: string): boolean => {
     if (!user) return false;
-    const role = user.role === 'admin' ? 'admin' : 'user';
-    if (permissions[permissionId] !== undefined) {
+    const role = user.role || 'user';
+    if (permissions[permissionId]?.[role] !== undefined) {
       return !!permissions[permissionId][role];
     }
     // Fallback based on default definitions
@@ -114,11 +116,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return role === 'admin' ? def.defaultAdmin : def.defaultUser;
   };
 
-  const savePermissions = async (newPermissions: Record<string, { admin: boolean; user: boolean }>) => {
+  const savePermissions = async (newPermissions: Record<string, Record<string, boolean>>) => {
     setPermissions(newPermissions);
     localStorage.setItem('letterport_permissions', JSON.stringify(newPermissions));
     try {
-      await updatePermissions(newPermissions, token || undefined);
+      await updatePermissions(newPermissions as any, token || undefined);
     } catch (err) {
       console.error('Failed to sync permissions with server:', err);
     }

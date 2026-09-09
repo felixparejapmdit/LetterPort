@@ -23,10 +23,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ALL_PERMISSIONS, PermissionItem, getDefaultPermissionsMap } from '@/lib/permissions';
+import { fetchRoles, RoleItem } from '@/lib/api';
 
 export default function AccessMatrixEditor() {
   const { isAdmin, permissions, savePermissions } = useAuth();
-  const [localPermissions, setLocalPermissions] = useState<Record<string, { admin: boolean; user: boolean }>>(permissions);
+  const [localPermissions, setLocalPermissions] = useState<Record<string, Record<string, boolean>>>(permissions);
+  const [roles, setRoles] = useState<RoleItem[]>([
+    { id: 'admin', code: 'admin', name: 'Admin', description: '', isSystem: true },
+    { id: 'user', code: 'user', name: 'Staff', description: '', isSystem: true },
+  ]);
   const [selectedPage, setSelectedPage] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
@@ -39,6 +44,28 @@ export default function AccessMatrixEditor() {
   useEffect(() => {
     setLocalPermissions(permissions);
   }, [permissions]);
+
+  // Load dynamic roles from API
+  useEffect(() => {
+    fetchRoles()
+      .then((serverRoles) => {
+        if (serverRoles && serverRoles.length > 0) {
+          const hasAdmin = serverRoles.some((r) => r.code === 'admin');
+          const hasUser = serverRoles.some((r) => r.code === 'user');
+          const ordered: RoleItem[] = [];
+          if (hasAdmin) ordered.push(serverRoles.find((r) => r.code === 'admin')!);
+          else ordered.push({ id: 'admin', code: 'admin', name: 'Admin', description: '', isSystem: true });
+
+          if (hasUser) ordered.push(serverRoles.find((r) => r.code === 'user')!);
+          else ordered.push({ id: 'user', code: 'user', name: 'Staff', description: '', isSystem: true });
+
+          const custom = serverRoles.filter((r) => r.code !== 'admin' && r.code !== 'user');
+          ordered.push(...custom);
+          setRoles(ordered);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -58,15 +85,18 @@ export default function AccessMatrixEditor() {
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const paginatedItems = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleToggle = (id: string, role: 'admin' | 'user') => {
+  const handleToggle = (id: string, roleCode: string) => {
     if (!isAdmin) return;
     setLocalPermissions((prev) => {
       const current = prev[id] || { admin: true, user: false };
+      const currentVal = current[roleCode] !== undefined 
+        ? !!current[roleCode] 
+        : (roleCode === 'admin' ? true : false);
       return {
         ...prev,
         [id]: {
           ...current,
-          [role]: !current[role],
+          [roleCode]: !currentVal,
         },
       };
     });
@@ -207,35 +237,43 @@ export default function AccessMatrixEditor() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="px-3.5 py-2.5 w-1/4">Action / Button</th>
-                <th className="px-3 py-2.5 w-1/6">Page</th>
-                <th className="px-3 py-2.5 w-2/5">Function & Description</th>
-                <th className="px-3 py-2.5 text-center">
-                  <div className="flex items-center justify-center gap-1 text-blue-600 dark:text-blue-400">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Admin</span>
-                  </div>
-                </th>
-                <th className="px-3 py-2.5 text-center">
-                  <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400">
-                    <User className="w-3.5 h-3.5" />
-                    <span>Staff</span>
-                  </div>
-                </th>
+                <th className="px-3.5 py-2.5 min-w-[200px]">Action / Button</th>
+                <th className="px-3 py-2.5 min-w-[120px]">Page</th>
+                <th className="px-3 py-2.5 min-w-[220px]">Function & Description</th>
+                {roles.map((r) => {
+                  const rCode = r.code || r.id;
+                  const isAdm = rCode === 'admin';
+                  const isUsr = rCode === 'user';
+                  return (
+                    <th key={rCode} className="px-3 py-2.5 text-center min-w-[100px]">
+                      <div className={`flex items-center justify-center gap-1 ${
+                        isAdm 
+                          ? 'text-blue-600 dark:text-blue-400' 
+                          : isUsr 
+                          ? 'text-emerald-600 dark:text-emerald-400' 
+                          : 'text-purple-600 dark:text-purple-400'
+                      }`}>
+                        {isAdm ? (
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                        ) : (
+                          <User className="w-3.5 h-3.5" />
+                        )}
+                        <span className="truncate max-w-[100px]">{r.label || r.name || rCode}</span>
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paginatedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-slate-400 text-xs">
+                  <td colSpan={3 + roles.length} className="py-6 text-center text-slate-400 text-xs">
                     No matching actions found.
                   </td>
                 </tr>
               ) : (
                 paginatedItems.map((item) => {
-                  const adminGranted = localPermissions[item.id]?.admin ?? item.defaultAdmin;
-                  const userGranted = localPermissions[item.id]?.user ?? item.defaultUser;
-
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                       {/* Action Name */}
@@ -267,39 +305,39 @@ export default function AccessMatrixEditor() {
                         {item.description}
                       </td>
 
-                      {/* Admin Toggle */}
-                      <td className="px-3 py-2 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          disabled={!isAdmin}
-                          onClick={() => handleToggle(item.id, 'admin')}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition ${
-                            adminGranted
-                              ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                              : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 opacity-60'
-                          } ${isAdmin ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
-                        >
-                          {adminGranted ? <CheckCircle2 className="w-3 h-3 text-blue-600" /> : <XCircle className="w-3 h-3 text-slate-400" />}
-                          <span>{adminGranted ? 'Granted' : 'Hidden'}</span>
-                        </button>
-                      </td>
+                      {/* Dynamic Role Toggles */}
+                      {roles.map((r) => {
+                        const rCode = r.code || r.id;
+                        const isAdm = rCode === 'admin';
+                        const isGranted = localPermissions[item.id]?.[rCode] !== undefined
+                          ? !!localPermissions[item.id][rCode]
+                          : (isAdm ? item.defaultAdmin : rCode === 'user' ? item.defaultUser : false);
 
-                      {/* Staff User Toggle */}
-                      <td className="px-3 py-2 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          disabled={!isAdmin}
-                          onClick={() => handleToggle(item.id, 'user')}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition ${
-                            userGranted
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                          } ${isAdmin ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
-                        >
-                          {userGranted ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <XCircle className="w-3 h-3 text-rose-600" />}
-                          <span>{userGranted ? 'Granted' : 'Restricted'}</span>
-                        </button>
-                      </td>
+                        return (
+                          <td key={rCode} className="px-3 py-2 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              disabled={!isAdmin}
+                              onClick={() => handleToggle(item.id, rCode)}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition ${
+                                isGranted
+                                  ? isAdm
+                                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                              } ${isAdmin ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
+                              title={`${isGranted ? 'Granted' : 'Restricted'} for ${r.label || r.name || rCode}`}
+                            >
+                              {isGranted ? (
+                                <CheckCircle2 className={`w-3 h-3 ${isAdm ? 'text-blue-600' : 'text-emerald-600'}`} />
+                              ) : (
+                                <XCircle className="w-3 h-3 text-rose-600" />
+                              )}
+                              <span>{isGranted ? 'Granted' : 'Hidden'}</span>
+                            </button>
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })

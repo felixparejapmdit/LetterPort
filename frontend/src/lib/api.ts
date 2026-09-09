@@ -271,7 +271,8 @@ export async function fetchCurrentUser(token?: string): Promise<UserProfile> {
   const res = await fetch(`${API_BASE}/auth/me`, { headers, cache: 'no-store' });
   if (!res.ok) throw new Error('Unauthenticated');
   const json = await res.json();
-  return json.data;
+  const userData = json.data?.user || json.data;
+  return userData;
 }
 
 export async function fetchUsers(token?: string): Promise<UserProfile[]> {
@@ -439,7 +440,7 @@ export interface RoleItem {
   code?: string;
   name: string;
   label?: string;
-  description: string;
+  description?: string;
   isSystem: boolean;
   color?: string;
   createdAt?: string;

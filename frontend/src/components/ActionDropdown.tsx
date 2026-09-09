@@ -58,8 +58,8 @@ export default function ActionDropdown({
     setMounted(true);
   }, []);
 
-  const updateCoords = () => {
-    if (!buttonRef.current) return;
+  const computeCoords = () => {
+    if (!buttonRef.current) return null;
     const rect = buttonRef.current.getBoundingClientRect();
     const menuEstimatedHeight = 220;
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -68,11 +68,16 @@ export default function ActionDropdown({
     const width = 176; // w-44 = 11rem = 176px
     const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
 
-    setCoords({
+    return {
       top: placeAbove ? rect.top - 6 : rect.bottom + 6,
       left,
       placeAbove
-    });
+    };
+  };
+
+  const updateCoords = () => {
+    const c = computeCoords();
+    if (c) setCoords(c);
   };
 
   useEffect(() => {
@@ -128,7 +133,7 @@ export default function ActionDropdown({
     );
   }
 
-  const menuContent = isOpen && mounted ? (
+  const menuContent = isOpen && mounted && (coords.top > 0 || coords.left > 0) ? (
     <div
       ref={menuRef}
       role="menu"
@@ -236,7 +241,13 @@ export default function ActionDropdown({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          setIsOpen(!isOpen);
+          if (isOpen) {
+            setIsOpen(false);
+          } else {
+            const calculated = computeCoords();
+            if (calculated) setCoords(calculated);
+            setIsOpen(true);
+          }
         }}
         className={`inline-flex items-center justify-center w-7 h-7 rounded-md transition shadow-2xs cursor-pointer ${
           isOpen

@@ -37,6 +37,9 @@ export default function RootLayout({
                 }
                 var design = localStorage.getItem('letterport_design_theme') || 'default';
                 document.documentElement.setAttribute('data-design', design);
+                if (design === 'notion') {
+                  document.documentElement.classList.add('theme-notion');
+                }
               } catch (_) {}
             `,
           }}

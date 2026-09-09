@@ -962,8 +962,11 @@ function SettingsContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Default Modern Card */}
                 <div
-                  onClick={() => setDesignTheme('default')}
-                  className={`cursor-pointer rounded-2xl p-5 border-2 transition-all relative ${
+                  onClick={() => {
+                    setDesignTheme('default');
+                    setNotification({ type: 'success', message: 'Switched to LetterPort Modern enterprise layout.' });
+                  }}
+                  className={`theme-card-modern cursor-pointer rounded-2xl p-5 border-2 transition-all relative ${
                     designTheme === 'default'
                       ? 'border-blue-600 bg-blue-50/20 dark:bg-blue-950/20 shadow-md ring-2 ring-blue-500/20'
                       : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30'
@@ -1006,7 +1009,11 @@ function SettingsContent() {
 
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setDesignTheme('default'); }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setDesignTheme('default');
+                      setNotification({ type: 'success', message: 'Switched to LetterPort Modern enterprise layout.' });
+                    }}
                     className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                       designTheme === 'default'
                         ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
@@ -1019,7 +1026,10 @@ function SettingsContent() {
 
                 {/* Notion Minimalist Card */}
                 <div
-                  onClick={() => setDesignTheme('notion')}
+                  onClick={() => {
+                    setDesignTheme('notion');
+                    setNotification({ type: 'success', message: 'Switched to Notion Minimalist layout! Theme applied across all pages.' });
+                  }}
                   className={`cursor-pointer rounded-2xl p-5 border-2 transition-all relative ${
                     designTheme === 'notion'
                       ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50/50 dark:bg-neutral-900/40 shadow-md ring-2 ring-neutral-400/20'
@@ -1063,7 +1073,11 @@ function SettingsContent() {
 
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setDesignTheme('notion'); }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setDesignTheme('notion');
+                      setNotification({ type: 'success', message: 'Switched to Notion Minimalist layout! Theme applied across all pages.' });
+                    }}
                     className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                       designTheme === 'notion'
                         ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 shadow-sm'

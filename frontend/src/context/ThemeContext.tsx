@@ -38,6 +38,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const storedDesign = (localStorage.getItem('letterport_design_theme') as DesignTheme) || 'default';
     setDesignThemeState(storedDesign);
     document.documentElement.setAttribute('data-design', storedDesign);
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.setAttribute('data-design', storedDesign);
+      if (storedDesign === 'notion') {
+        document.documentElement.classList.add('theme-notion');
+        document.body.classList.add('theme-notion');
+      } else {
+        document.documentElement.classList.remove('theme-notion');
+        document.body.classList.remove('theme-notion');
+      }
+    }
 
     setMounted(true);
   }, []);
@@ -59,7 +69,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setDesignTheme = (theme: DesignTheme) => {
     setDesignThemeState(theme);
-    document.documentElement.setAttribute('data-design', theme);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-design', theme);
+      if (document.body) {
+        document.body.setAttribute('data-design', theme);
+        if (theme === 'notion') {
+          document.documentElement.classList.add('theme-notion');
+          document.body.classList.add('theme-notion');
+        } else {
+          document.documentElement.classList.remove('theme-notion');
+          document.body.classList.remove('theme-notion');
+        }
+      }
+    }
     localStorage.setItem('letterport_design_theme', theme);
   };
 

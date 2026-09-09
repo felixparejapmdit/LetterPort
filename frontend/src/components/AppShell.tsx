@@ -4,21 +4,33 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import SearchModal from '@/components/SearchModal';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
+  const { designTheme } = useTheme();
 
   if (isLoginPage) {
     return (
-      <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-0 m-0 overflow-x-hidden">
+      <div 
+        className={`min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-0 m-0 overflow-x-hidden ${
+          designTheme === 'notion' ? 'theme-notion' : ''
+        }`}
+        data-design={designTheme}
+      >
         {children}
       </div>
     );
   }
 
   return (
-    <>
+    <div
+      className={`min-h-screen flex flex-col transition-colors ${
+        designTheme === 'notion' ? 'theme-notion bg-[#f7f6f3] dark:bg-[#191919]' : 'bg-slate-50 dark:bg-slate-950'
+      }`}
+      data-design={designTheme}
+    >
       <Navbar />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {children}
@@ -37,6 +49,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
+

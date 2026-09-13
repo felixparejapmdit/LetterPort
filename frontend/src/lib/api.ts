@@ -1,5 +1,19 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs: number = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal,
+    });
+    return res;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export interface Letter {
   id: string;
   referenceNumber: string;
@@ -75,7 +89,7 @@ export interface DashboardStats {
 }
 
 export async function fetchStats(): Promise<DashboardStats> {
-  const res = await fetch(`${API_BASE}/stats`, { cache: 'no-store' });
+  const res = await fetchWithTimeout(`${API_BASE}/stats`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch dashboard stats');
   const json = await res.json();
   return json.data;
@@ -99,14 +113,14 @@ export async function fetchLetters(params?: {
   if (params?.page) query.set('page', params.page.toString());
   if (params?.limit) query.set('limit', params.limit.toString());
 
-  const res = await fetch(`${API_BASE}/letters?${query.toString()}`, { cache: 'no-store' });
+  const res = await fetchWithTimeout(`${API_BASE}/letters?${query.toString()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch letters');
   const json = await res.json();
   return json.data;
 }
 
 export async function fetchLetter(id: string): Promise<LetterDetails> {
-  const res = await fetch(`${API_BASE}/letters/${id}`, { cache: 'no-store' });
+  const res = await fetchWithTimeout(`${API_BASE}/letters/${id}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch letter details');
   const json = await res.json();
   return json.data;
@@ -268,7 +282,7 @@ export async function loginUser(credentials: { username: string; password: strin
 export async function fetchCurrentUser(token?: string): Promise<UserProfile> {
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}/auth/me`, { headers, cache: 'no-store' });
+  const res = await fetchWithTimeout(`${API_BASE}/auth/me`, { headers, cache: 'no-store' });
   if (!res.ok) throw new Error('Unauthenticated');
   const json = await res.json();
   const userData = json.data?.user || json.data;
@@ -362,7 +376,7 @@ export type RolePermissionsMap = Record<string, { admin: boolean; user: boolean 
 
 export async function fetchPermissions(): Promise<RolePermissionsMap | null> {
   try {
-    const res = await fetch(`${API_BASE}/settings/permissions`, { cache: 'no-store' });
+    const res = await fetchWithTimeout(`${API_BASE}/settings/permissions`, { cache: 'no-store' });
     if (!res.ok) return null;
     const json = await res.json();
     return json.data;
@@ -448,7 +462,7 @@ export interface RoleItem {
 
 // Statuses
 export async function fetchStatuses(): Promise<ClassificationItem[]> {
-  const res = await fetch(`${API_BASE}/classifications/statuses`, { cache: 'no-store' });
+  const res = await fetchWithTimeout(`${API_BASE}/classifications/statuses`, { cache: 'no-store' });
   if (!res.ok) return [];
   const json = await res.json();
   return json.data || [];
@@ -485,7 +499,7 @@ export async function deleteStatus(id: string): Promise<void> {
 
 // Priorities
 export async function fetchPriorities(): Promise<ClassificationItem[]> {
-  const res = await fetch(`${API_BASE}/classifications/priorities`, { cache: 'no-store' });
+  const res = await fetchWithTimeout(`${API_BASE}/classifications/priorities`, { cache: 'no-store' });
   if (!res.ok) return [];
   const json = await res.json();
   return json.data || [];
@@ -522,7 +536,7 @@ export async function deletePriority(id: string): Promise<void> {
 
 // Types
 export async function fetchLetterTypes(): Promise<ClassificationItem[]> {
-  const res = await fetch(`${API_BASE}/classifications/types`, { cache: 'no-store' });
+  const res = await fetchWithTimeout(`${API_BASE}/classifications/types`, { cache: 'no-store' });
   if (!res.ok) return [];
   const json = await res.json();
   return json.data || [];

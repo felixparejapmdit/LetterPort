@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   fetchSettings, 
@@ -57,8 +57,7 @@ import {
   Layout
 } from 'lucide-react';
 
-function SettingsContent() {
-  const searchParams = useSearchParams();
+export default function SettingsPage() {
   const router = useRouter();
   const { user: currentUser, isAdmin, token, updateUserAvatar } = useAuth();
   const { colorMode, setColorMode, designTheme, setDesignTheme } = useTheme();
@@ -105,12 +104,27 @@ function SettingsContent() {
   const [savingFormat, setSavingFormat] = useState(false);
 
   // Active Tab Management
-  const queryTab = searchParams.get('tab');
   const defaultTab = isAdmin ? 'general' : 'profile';
-  const activeTab = queryTab || defaultTab;
+  const [activeTab, setActiveTabState] = useState(defaultTab);
+
+  useEffect(() => {
+    const syncTab = () => {
+      if (typeof window === 'undefined') return;
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      if (tab) {
+        setActiveTabState(tab);
+      }
+    };
+    syncTab();
+    window.addEventListener('popstate', syncTab);
+    return () => window.removeEventListener('popstate', syncTab);
+  }, []);
 
   const setActiveTab = (tabId: string) => {
-    router.push(`/settings?tab=${tabId}`);
+    setActiveTabState(tabId);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', `/settings?tab=${tabId}`);
+    }
   };
 
   const adminTabs = [
@@ -679,6 +693,7 @@ function SettingsContent() {
 
             <Link
               href="/access-matrix"
+              prefetch={false}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold transition"
             >
               <span>Full Screen View</span>
@@ -1384,18 +1399,5 @@ function SettingsContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function SettingsPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Loading settings...</p>
-      </div>
-    }>
-      <SettingsContent />
-    </Suspense>
   );
 }

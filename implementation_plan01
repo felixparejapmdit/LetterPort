@@ -1,0 +1,86 @@
+# Fix Desktop Navigation Freeze on Consecutive Page Clicks
+
+## Problem Description
+When clicking two pages consecutively (e.g. Dashboard &rarr; All Letters, or rapid consecutive clicks on any desktop nav link), the UI freezes completely and stops responding to clicks until the browser URL is manually refreshed. This issue occurs in desktop/normal view and does not happen in mobile view.
+
+## Root Cause Analysis
+1. **Next.js 14 App Router Action Queue Deadlock**:
+   - Next.js 14.2 `<Link>` components intercept clicks with `e.preventDefault()` and dispatch a `NAVIGATE` action to Next.js's internal `actionQueue` inside React's `startTransition`.
+   - When a user clicks one page and then clicks another link before the first transition settles, Next.js marks the first action as `discarded`.
+   - In Next.js 14.2's `action-queue.js`, discarded actions return immediately without calling `action.resolve()` or `action.reject()`.
+   - Because the first action's deferred promise is never settled, React 18's transition scheduler stays pending indefinitely.
+   - Once stuck, any subsequent click on any `<Link>` has `e.preventDefault()` called by Next.js, but the router never navigates—making the page appear completely frozen.
+2. **Why Mobile View Did Not Freeze**:
+   - On mobile, navigation links reside inside a slide-out drawer that immediately closes on click (`setMobileMenuOpen(false)`). The user cannot click consecutive links while a transition is pending. On desktop, all 5 navigation links are simultaneously visible side-by-side.
+3. **`useSearchParams` and `<Suspense>` De-optimization**:
+   - Client pages (`letters`, `search`, `settings`, `letters/[id]`) were using `useSearchParams()`, forcing them into `<Suspense>` boundaries. In Next.js App Router, in-flight transitions interrupted while resolving Suspense boundaries exacerbate client-side router deadlocks.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Zero Breaking Changes**: All routes, query parameters, permissions, and URLs remain 100% identical. The fix adds an intelligent navigation controller that uses fast SPA transitions when smooth, and immediately falls back to native navigation if a consecutive click is detected—making it physically impossible for the router to lock or freeze.
+
+---
+
+## Proposed Changes
+
+### 1. Navigation Controller & Navbar Safeguards
+#### [MODIFY] [Navbar.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/components/Navbar.tsx)
+- Add a concurrency-safe navigation controller `handleNavigate(e, href)`:
+  - If clicking the currently active page (`pathname === href`), prevent redundant transition.
+  - If a navigation is already in flight (consecutive click within transition window), bypass the deadlocking Next.js action queue and execute `window.location.href = href`.
+  - Add a 750ms safety watchdog timer: if Next.js dev compilation or router transition stalls, automatically navigate via native URL to unfreeze the UI.
+  - Reset navigation lock on route change (`useEffect([pathname])`).
+- Apply `handleNavigate` to:
+  - Desktop nav links (Dashboard, All Letters, Resumen, Add Letter, Search)
+  - Logo link
+  - Settings dropdown menu items
+  - Mobile menu links
+
+---
+
+### 2. Dashboard Navigation Links
+#### [MODIFY] [page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/page.tsx)
+- Add `prefetch={false}` and `onClick={(e) => handleNavigate(e, href)}` to:
+  - All 6 metric cards (`/letters`, `/letters?type=INCOMING`, `/letters?type=OUTGOING`, `/letters?priority=URGENT`, `/letters?status=OVERDUE`, `/letters?ocrStatus=PENDING`).
+  - Quick launchpad buttons (Add Letter, Search, View All).
+
+---
+
+### 3. Remove `useSearchParams` & `<Suspense>` De-optimizations
+#### [MODIFY] [letters/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/letters/page.tsx)
+- Replace `useSearchParams()` with synchronous `new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')`.
+- Remove `<Suspense>` wrapper and export `LettersPage` directly as a standard client component.
+- Add `popstate` event listener to handle browser back/forward buttons cleanly.
+- Add safe navigation handler to the "Open Resumen" quick link.
+
+#### [MODIFY] [search/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/search/page.tsx)
+- Replace `useSearchParams()` with synchronous query parameter reader.
+- Remove `<Suspense>` wrapper and export `SearchPage` directly.
+
+#### [MODIFY] [settings/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/settings/page.tsx)
+- Replace `useSearchParams()` with synchronous tab parameter reader.
+- Remove `<Suspense>` wrapper and export `SettingsPage` directly.
+
+#### [MODIFY] [letters/[id]/page.tsx](file:///d:/PROJECTS/LetterPort/frontend/src/app/letters/[id]/page.tsx)
+- Remove unused `useSearchParams()`.
+
+---
+
+## Verification Plan
+
+### Automated Verification
+- Run TypeScript compile check: `npx tsc --noEmit` in `frontend/`.
+- Run automated CDP test simulating:
+  - Rapid consecutive clicks (sub-150ms) across all desktop navbar links (`/` &rarr; `/letters` &rarr; `/resumen` &rarr; `/encode` &rarr; `/search`).
+  - Rapid double-clicks on the same link.
+  - Metric card clicks from Dashboard &rarr; All Letters.
+  - Verify `window.location.href` updates accurately and subsequent UI clicks (buttons, checkboxes, inputs) remain 100% responsive.
+
+### Manual Verification
+- Test in standard desktop browser window:
+  - Click "All Letters" and immediately click "Dashboard".
+  - Click "Dashboard" and immediately click "Resumen".
+  - Verify smooth, instant transition with zero freezing or locked UI.

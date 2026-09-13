@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   fetchLetter, 
@@ -42,7 +42,6 @@ import {
 export default function LetterDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const id = params?.id as string;
   const { isAdmin, hasPermission } = useAuth();
 
@@ -84,10 +83,10 @@ export default function LetterDetailPage() {
   }, [details?.ocrRecord?.status]);
 
   useEffect(() => {
-    if (searchParams?.get('track') === 'true') {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('track') === 'true') {
       setIsTrackingOpen(true);
     }
-  }, [searchParams]);
+  }, []);
 
   const handleStatusChange = async (newStatus: any) => {
     if (!details) return;
@@ -143,6 +142,7 @@ export default function LetterDetailPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error || 'Could not find this letter.'}</p>
         <Link
           href="/letters"
+          prefetch={false}
           className="mt-4 inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -163,6 +163,7 @@ export default function LetterDetailPage() {
         <div className="flex items-start sm:items-center space-x-3">
           <Link
             href="/letters"
+            prefetch={false}
             className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             title="Back to letters list"
           >

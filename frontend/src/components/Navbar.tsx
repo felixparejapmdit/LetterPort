@@ -36,13 +36,14 @@ import UserAvatar from '@/components/UserAvatar';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, hasPermission, logout } = useAuth();
   const { resumenCount } = useResumen();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigatingRef = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -50,6 +51,7 @@ export default function Navbar() {
 
   // Close dropdown on outside click
   useEffect(() => {
+    if (!settingsDropdownOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setSettingsDropdownOpen(false);
@@ -57,16 +59,58 @@ export default function Navbar() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [settingsDropdownOpen]);
+
+  // Close menus and reset navigation lock when route changes
+  useEffect(() => {
+    navigatingRef.current = null;
+    setSettingsDropdownOpen(false);
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  const handleNavigate = (e: React.MouseEvent, href: string) => {
+    // If clicking current page with exact same query, prevent redundant reload/action
+    const currentUrl = typeof window !== 'undefined'
+      ? (window.location.pathname + window.location.search)
+      : pathname;
+    if (currentUrl === href) {
+      e.preventDefault();
+      return;
+    }
+
+    // If another navigation was triggered within the transition window (consecutive clicks)
+    // bypass Next.js action queue to avoid deadlock: navigate cleanly via native browser navigation!
+    if (navigatingRef.current) {
+      e.preventDefault();
+      window.location.href = href;
+      return;
+    }
+
+    navigatingRef.current = href;
+
+    // Safety watchdog: if route does not transition within 750ms, force navigation
+    setTimeout(() => {
+      if (navigatingRef.current === href) {
+        const afterUrl = typeof window !== 'undefined'
+          ? (window.location.pathname + window.location.search)
+          : '';
+        if (afterUrl !== href) {
+          window.location.href = href;
+        }
+      }
+    }, 750);
+  };
 
   if (pathname === '/login') {
     return null;
   }
 
+  const canViewResumen = hasPermission('resumen_view');
+
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/letters', label: 'All Letters', icon: FileText },
-    { href: '/resumen', label: 'Resumen', icon: BookOpen, badge: resumenCount },
+    ...(canViewResumen ? [{ href: '/resumen', label: 'Resumen', icon: BookOpen, badge: resumenCount }] : []),
     { href: '/encode', label: 'Add Letter', icon: PlusCircle },
     { href: '/search', label: 'Search', icon: Search },
   ];
@@ -118,7 +162,12 @@ export default function Navbar() {
       <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center space-x-3">
-            <Link href="/" className="flex items-center space-x-2.5 group">
+            <Link 
+              href="/" 
+              prefetch={false}
+              onClick={(e) => handleNavigate(e, '/')}
+              className="flex items-center space-x-2.5 group"
+            >
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
                 <Mail className="w-4 h-4" />
               </div>
@@ -161,6 +210,8 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={false}
+                    onClick={(e) => handleNavigate(e, link.href)}
                     className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                       isActive
                         ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/30'
@@ -213,7 +264,11 @@ export default function Navbar() {
                               <Link
                                 key={tab.href}
                                 href={tab.href}
-                                onClick={() => setSettingsDropdownOpen(false)}
+                                prefetch={false}
+                                onClick={(e) => {
+                                  setSettingsDropdownOpen(false);
+                                  handleNavigate(e, tab.href);
+                                }}
                                 className="flex items-start gap-2.5 p-1.5 rounded-xl text-xs hover:bg-slate-50 dark:hover:bg-slate-800/80 transition group"
                               >
                                 <div className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 transition">
@@ -302,7 +357,11 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
+                prefetch={false}
+                onClick={(e) => {
+                  setMobileMenuOpen(false);
+                  handleNavigate(e, link.href);
+                }}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-base font-medium transition-all ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
@@ -340,7 +399,11 @@ export default function Navbar() {
                     <Link
                       key={tab.href}
                       href={tab.href}
-                      onClick={() => setMobileMenuOpen(false)}
+                      prefetch={false}
+                      onClick={(e) => {
+                        setMobileMenuOpen(false);
+                        handleNavigate(e, tab.href);
+                      }}
                       className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                     >
                       <TabIcon className="w-3.5 h-3.5 text-slate-500" />

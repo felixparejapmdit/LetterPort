@@ -35,9 +35,17 @@ export class SqliteLetterRepository implements ILetterRepository {
     return new Promise((resolve, reject) => {
       this.db = new sqlite3.Database(this.dbPath, (err) => {
         if (err) return reject(err);
-        this.createTables()
-          .then(resolve)
-          .catch(reject);
+        this.db.exec(`
+          PRAGMA journal_mode = WAL;
+          PRAGMA busy_timeout = 10000;
+          PRAGMA synchronous = NORMAL;
+          PRAGMA cache_size = -64000;
+        `, (pragmaErr) => {
+          if (pragmaErr) console.warn('Warning applying SQLite PRAGMAs:', pragmaErr);
+          this.createTables()
+            .then(resolve)
+            .catch(reject);
+        });
       });
     });
   }

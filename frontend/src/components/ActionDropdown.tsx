@@ -56,8 +56,9 @@ export default function ActionDropdown({
   const canDownload = hasPermission(isDashboard ? 'dashboard_download' : 'letters_download');
   const canSticker = isDashboard ? true : hasPermission('letters_sticker');
   const canDelete = hasPermission(isDashboard ? 'dashboard_delete' : 'letters_delete');
+  const canAddToResumen = hasPermission('resumen_add_to');
 
-  const hasAnyAction = true;
+  const hasAnyAction = canTrack || canView || canEdit || canDownload || canSticker || canAddToResumen || (isAdmin && canDelete);
 
   useEffect(() => {
     setMounted(true);
@@ -171,6 +172,7 @@ export default function ActionDropdown({
           {canView && (
             <Link
               href={`/letters/${letter.id}`}
+              prefetch={false}
               onClick={() => setIsOpen(false)}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-700 dark:hover:text-indigo-400 transition text-left cursor-pointer"
             >
@@ -210,6 +212,7 @@ export default function ActionDropdown({
           {canSticker && (
             <Link
               href={`/letters/${letter.id}?sticker=true`}
+              prefetch={false}
               onClick={() => setIsOpen(false)}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-700 dark:hover:text-purple-400 transition text-left cursor-pointer"
             >
@@ -221,29 +224,31 @@ export default function ActionDropdown({
       )}
 
       {/* Resumen Docket Action */}
-      <div className="py-1">
-        <button
-          type="button"
-          onClick={() => handleAction(() => toggleResumen(letter))}
-          className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition text-left cursor-pointer ${
-            inResumen
-              ? 'text-teal-700 dark:text-teal-300 bg-teal-50/70 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50 font-medium'
-              : 'text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/30 hover:text-teal-700 dark:hover:text-teal-300'
-          }`}
-        >
-          {inResumen ? (
-            <>
-              <BookmarkCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span>In Resumen (Remove)</span>
-            </>
-          ) : (
-            <>
-              <BookmarkPlus className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span>Add to Resumen</span>
-            </>
-          )}
-        </button>
-      </div>
+      {canAddToResumen && (
+        <div className="py-1">
+          <button
+            type="button"
+            onClick={() => handleAction(() => toggleResumen(letter))}
+            className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition text-left cursor-pointer ${
+              inResumen
+                ? 'text-teal-700 dark:text-teal-300 bg-teal-50/70 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50 font-medium'
+                : 'text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/30 hover:text-teal-700 dark:hover:text-teal-300'
+            }`}
+          >
+            {inResumen ? (
+              <>
+                <BookmarkCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                <span>In Resumen (Remove)</span>
+              </>
+            ) : (
+              <>
+                <BookmarkPlus className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                <span>Add to Resumen</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Delete Action */}
       {canDelete && onDelete && (
@@ -294,7 +299,7 @@ export default function ActionDropdown({
       </button>
 
       {/* Render menu portal in document.body to prevent any container clipping */}
-      {mounted && typeof document !== 'undefined' && createPortal(menuContent, document.body)}
+      {mounted && isOpen && menuContent && typeof document !== 'undefined' && createPortal(menuContent, document.body)}
     </div>
   );
 }

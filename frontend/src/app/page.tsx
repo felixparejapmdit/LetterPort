@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { 
   fetchStats, 
@@ -14,6 +14,7 @@ import { StatusBadge, PriorityBadge, TypeBadge, PriorityIcon } from '@/component
 import EditLetterModal from '@/components/EditLetterModal';
 import TrackingModal from '@/components/TrackingModal';
 import ActionDropdown from '@/components/ActionDropdown';
+import { useAuth } from '@/context/AuthContext';
 import { 
   Inbox, 
   Send, 
@@ -34,6 +35,10 @@ import {
 const PAGE_SIZE = 5;
 
 export default function DashboardPage() {
+  const { hasPermission } = useAuth();
+  const canAddLetter = hasPermission('dashboard_add_letter');
+  const canRefresh = hasPermission('dashboard_refresh');
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentLetters, setRecentLetters] = useState<Letter[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -42,8 +47,35 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [editingLetter, setEditingLetter] = useState<Letter | null>(null);
   const [trackingLetter, setTrackingLetter] = useState<Letter | null>(null);
+  const navigatingRef = useRef<string | null>(null);
 
-  const loadData = async (currentPage = page) => {
+  const handleNavigate = (e: React.MouseEvent, href: string) => {
+    const currentUrl = typeof window !== 'undefined'
+      ? (window.location.pathname + window.location.search)
+      : '';
+    if (currentUrl === href) {
+      e.preventDefault();
+      return;
+    }
+    if (navigatingRef.current) {
+      e.preventDefault();
+      window.location.href = href;
+      return;
+    }
+    navigatingRef.current = href;
+    setTimeout(() => {
+      if (navigatingRef.current === href) {
+        const afterUrl = typeof window !== 'undefined'
+          ? (window.location.pathname + window.location.search)
+          : '';
+        if (afterUrl !== href) {
+          window.location.href = href;
+        }
+      }
+    }, 750);
+  };
+
+  const loadData = async (currentPage = page, isMounted?: { current: boolean }) => {
     try {
       const [statsData, lettersData] = await Promise.all([
         fetchStats().catch(() => ({
@@ -57,19 +89,27 @@ export default function DashboardPage() {
         })),
         fetchLetters({ page: currentPage, limit: PAGE_SIZE }).catch(() => ({ letters: [], pagination: { total: 0, totalPages: 0, page: 1 } })),
       ]);
-      setStats(statsData);
-      setRecentLetters(lettersData.letters);
-      setTotalCount(lettersData.pagination?.total ?? lettersData.letters.length);
+      if (!isMounted || isMounted.current) {
+        setStats(statsData);
+        setRecentLetters(lettersData.letters);
+        setTotalCount(lettersData.pagination?.total ?? lettersData.letters.length);
+      }
     } catch (err) {
       console.error('Failed to load dashboard:', err);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!isMounted || isMounted.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadData(page);
+    const isMounted = { current: true };
+    loadData(page, isMounted);
+    return () => {
+      isMounted.current = false;
+    };
   }, [page]);
 
   const handleRefresh = () => {
@@ -93,21 +133,27 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center space-x-2">
-          <button
-            onClick={handleRefresh}
-            className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition cursor-pointer"
-            title="Refresh dashboard"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
+          {canRefresh && (
+            <button
+              onClick={handleRefresh}
+              className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition cursor-pointer"
+              title="Refresh dashboard"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          )}
 
-          <Link
-            href="/encode"
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 transition cursor-pointer active:scale-95"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Upload Letter</span>
-          </Link>
+          {canAddLetter && (
+            <Link
+              href="/encode"
+              prefetch={false}
+              onClick={(e) => handleNavigate(e, '/encode')}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 transition cursor-pointer active:scale-95"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Upload Letter</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -116,6 +162,8 @@ export default function DashboardPage() {
         {/* Total */}
         <Link 
           href="/letters"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/letters')}
           className="group glass-card p-3 rounded-xl hover:border-blue-500/50 hover:shadow-2xs transition-all block cursor-pointer"
           title="View all letters"
         >
@@ -134,6 +182,8 @@ export default function DashboardPage() {
         {/* Incoming */}
         <Link 
           href="/letters?type=INCOMING"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/letters?type=INCOMING')}
           className="group glass-card p-3 rounded-xl hover:border-emerald-500/50 hover:shadow-2xs transition-all block cursor-pointer"
           title="View incoming letters"
         >
@@ -152,6 +202,8 @@ export default function DashboardPage() {
         {/* Outgoing */}
         <Link 
           href="/letters?type=OUTGOING"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/letters?type=OUTGOING')}
           className="group glass-card p-3 rounded-xl hover:border-indigo-500/50 hover:shadow-2xs transition-all block cursor-pointer"
           title="View outgoing letters"
         >
@@ -170,6 +222,8 @@ export default function DashboardPage() {
         {/* Urgent */}
         <Link 
           href="/letters?priority=URGENT"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/letters?priority=URGENT')}
           className="group glass-card p-3 rounded-xl hover:border-rose-500/50 hover:shadow-2xs transition-all block cursor-pointer"
           title="View urgent letters"
         >
@@ -188,6 +242,8 @@ export default function DashboardPage() {
         {/* Overdue */}
         <Link 
           href="/letters?status=OVERDUE"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/letters?status=OVERDUE')}
           className="group glass-card p-3 rounded-xl hover:border-red-500/50 hover:shadow-2xs transition-all block cursor-pointer"
           title="View overdue letters"
         >
@@ -206,6 +262,8 @@ export default function DashboardPage() {
         {/* Reading (OCR Scanning) */}
         <Link 
           href="/letters?ocrStatus=PENDING"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/letters?ocrStatus=PENDING')}
           className="group glass-card p-3 rounded-xl hover:border-amber-500/50 hover:shadow-2xs transition-all block cursor-pointer"
           title="View letters currently reading/scanning"
         >
@@ -226,6 +284,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Link
           href="/encode"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/encode')}
           className="p-3.5 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-sm hover:shadow-md transition group flex flex-col justify-between cursor-pointer"
         >
           <div>
@@ -245,6 +305,8 @@ export default function DashboardPage() {
 
         <Link
           href="/search"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/search')}
           className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs transition group flex flex-col justify-between cursor-pointer"
         >
           <div>
@@ -264,6 +326,8 @@ export default function DashboardPage() {
 
         <Link
           href="/letters"
+          prefetch={false}
+          onClick={(e) => handleNavigate(e, '/letters')}
           className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs transition group flex flex-col justify-between cursor-pointer"
         >
           <div>
@@ -291,6 +355,8 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/letters"
+            prefetch={false}
+            onClick={(e) => handleNavigate(e, '/letters')}
             className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
           >
             <span>See All</span>
@@ -313,6 +379,8 @@ export default function DashboardPage() {
             <div className="mt-3 flex items-center justify-center gap-2">
               <Link
                 href="/encode"
+                prefetch={false}
+                onClick={(e) => handleNavigate(e, '/encode')}
                 className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs hover:bg-blue-700 transition"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
@@ -320,6 +388,8 @@ export default function DashboardPage() {
               </Link>
               <Link
                 href="/settings"
+                prefetch={false}
+                onClick={(e) => handleNavigate(e, '/settings')}
                 className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition"
               >
                 <span>Load Sample Letters</span>
@@ -371,7 +441,13 @@ export default function DashboardPage() {
                         <td className="px-3.5 py-2 font-mono font-semibold text-xs whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             <PriorityIcon priority={l.priority} />
-                            <Link href={`/letters/${l.id}`} className="text-blue-600 dark:text-blue-400 hover:underline" title="View details">
+                            <Link
+                              href={`/letters/${l.id}`}
+                              prefetch={false}
+                              onClick={(e) => handleNavigate(e, `/letters/${l.id}`)}
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
+                              title="View details"
+                            >
                               {l.referenceNumber}
                             </Link>
                           </div>

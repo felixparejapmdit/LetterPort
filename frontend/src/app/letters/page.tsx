@@ -1,8 +1,7 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { 
   fetchLetters, 
   deleteLetter, 
@@ -16,6 +15,7 @@ import EditLetterModal from '@/components/EditLetterModal';
 import TrackingModal from '@/components/TrackingModal';
 import ActionDropdown from '@/components/ActionDropdown';
 import { useResumen } from '@/context/ResumenContext';
+import { useAuth } from '@/context/AuthContext';
 import { 
   FileText, 
   PlusCircle, 
@@ -42,21 +42,27 @@ import {
 
 const PAGE_SIZE = 15;
 
-function LettersContent() {
-  const searchParams = useSearchParams();
+export default function LettersPage() {
   const { addMultipleToResumen, resumenLetters, resumenCount } = useResumen();
+  const { hasPermission } = useAuth();
+
+  const canBulkSelect = hasPermission('letters_bulk_select');
+  const canAddSelectedToResumen = hasPermission('letters_add_to_resumen');
+  const canExportLetters = hasPermission('letters_export_csv');
+  const canViewResumen = hasPermission('resumen_view');
+  const canAddLetter = hasPermission('letters_add_letter');
 
   const [letters, setLetters] = useState<Letter[]>([]);
   const [types, setTypes] = useState<ClassificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Filters
-  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '');
-  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
-  const [priorityFilter, setPriorityFilter] = useState(searchParams.get('priority') || '');
-  const [ocrStatusFilter, setOcrStatusFilter] = useState(searchParams.get('ocrStatus') || '');
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [overdueFilter, setOverdueFilter] = useState(searchParams.get('overdue') === 'true');
+  // Filters (initialized synchronously, updated via URL and popstate)
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [ocrStatusFilter, setOcrStatusFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [overdueFilter, setOverdueFilter] = useState(false);
   
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -69,30 +75,66 @@ function LettersContent() {
   // Modals
   const [editingLetter, setEditingLetter] = useState<Letter | null>(null);
   const [trackingLetter, setTrackingLetter] = useState<Letter | null>(null);
+  const navigatingRef = useRef<string | null>(null);
+
+  const handleNavigate = (e: React.MouseEvent, href: string) => {
+    const currentUrl = typeof window !== 'undefined'
+      ? (window.location.pathname + window.location.search)
+      : '';
+    if (currentUrl === href) {
+      e.preventDefault();
+      return;
+    }
+    if (navigatingRef.current) {
+      e.preventDefault();
+      window.location.href = href;
+      return;
+    }
+    navigatingRef.current = href;
+    setTimeout(() => {
+      if (navigatingRef.current === href) {
+        const afterUrl = typeof window !== 'undefined'
+          ? (window.location.pathname + window.location.search)
+          : '';
+        if (afterUrl !== href) {
+          window.location.href = href;
+        }
+      }
+    }, 750);
+  };
+
+  // Sync state from URL query parameters on mount and browser navigation
+  useEffect(() => {
+    const syncFromUrl = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      setTypeFilter(params.get('type') || '');
+      setStatusFilter(params.get('status') || '');
+      setPriorityFilter(params.get('priority') || '');
+      setOcrStatusFilter(params.get('ocrStatus') || '');
+      setSearchTerm(params.get('search') || '');
+      setOverdueFilter(params.get('overdue') === 'true');
+    };
+
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
+  }, []);
 
   // Load custom classification types
   useEffect(() => {
+    let isMounted = true;
     async function loadTypes() {
       try {
         const data = await fetchLetterTypes();
-        setTypes(data);
+        if (isMounted) setTypes(data);
       } catch (err) {
         console.error('Failed to load letter types:', err);
       }
     }
     loadTypes();
+    return () => { isMounted = false; };
   }, []);
-
-  // Sync state when URL query changes
-  useEffect(() => {
-    setTypeFilter(searchParams.get('type') || '');
-    setStatusFilter(searchParams.get('status') || '');
-    setPriorityFilter(searchParams.get('priority') || '');
-    setOcrStatusFilter(searchParams.get('ocrStatus') || '');
-    setSearchTerm(searchParams.get('search') || '');
-    setOverdueFilter(searchParams.get('overdue') === 'true');
-    setPage(1);
-  }, [searchParams]);
 
   const loadLetters = async () => {
     setLoading(true);
@@ -106,9 +148,9 @@ function LettersContent() {
         page,
         limit: PAGE_SIZE,
       });
-      setLetters(data.letters);
-      setTotalPages(data.pagination.totalPages || 1);
-      setTotalCount(data.pagination.total || 0);
+      setLetters(data?.letters || []);
+      setTotalPages(data?.pagination?.totalPages || 1);
+      setTotalCount(data?.pagination?.total || 0);
     } catch (err) {
       console.error('Failed to load letters:', err);
     } finally {
@@ -117,8 +159,36 @@ function LettersContent() {
   };
 
   useEffect(() => {
-    loadLetters();
-    setSelectedIds(new Set()); // Reset selection on filter/page change
+    let isMounted = true;
+    setLoading(true);
+
+    fetchLetters({
+      type: typeFilter || undefined,
+      status: statusFilter || undefined,
+      priority: priorityFilter || undefined,
+      ocrStatus: ocrStatusFilter || undefined,
+      search: searchTerm.trim() || undefined,
+      page,
+      limit: PAGE_SIZE,
+    })
+      .then((data) => {
+        if (isMounted) {
+          setLetters(data?.letters || []);
+          setTotalPages(data?.pagination?.totalPages || 1);
+          setTotalCount(data?.pagination?.total || 0);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) console.error('Failed to load letters:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    setSelectedIds(new Set());
+    return () => {
+      isMounted = false;
+    };
   }, [typeFilter, statusFilter, priorityFilter, ocrStatusFilter, page]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -218,26 +288,34 @@ function LettersContent() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <Link
-            href="/resumen"
-            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200/80 dark:border-teal-800 font-semibold text-xs transition shadow-2xs"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-            <span>Resumen</span>
-            {resumenCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-teal-600 text-white">
-                {resumenCount}
-              </span>
-            )}
-          </Link>
+          {canViewResumen && (
+            <Link
+              href="/resumen"
+              prefetch={false}
+              onClick={(e) => handleNavigate(e, '/resumen')}
+              className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200/80 dark:border-teal-800 font-semibold text-xs transition shadow-2xs"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span>Resumen</span>
+              {resumenCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-teal-600 text-white">
+                  {resumenCount}
+                </span>
+              )}
+            </Link>
+          )}
 
-          <Link
-            href="/encode"
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 transition cursor-pointer"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Upload Letter</span>
-          </Link>
+          {canAddLetter && (
+            <Link
+              href="/encode"
+              prefetch={false}
+              onClick={(e) => handleNavigate(e, '/encode')}
+              className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 transition cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Upload Letter</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -406,28 +484,32 @@ function LettersContent() {
           </div>
 
           {/* Resumen Quick Card */}
-          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/30 rounded-xl border border-teal-200/80 dark:border-teal-900/60 p-3 shadow-2xs">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                <span className="text-xs font-bold text-teal-900 dark:text-teal-200">Resumen</span>
+          {canViewResumen && (
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/30 rounded-xl border border-teal-200/80 dark:border-teal-900/60 p-3 shadow-2xs">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                  <span className="text-xs font-bold text-teal-900 dark:text-teal-200">Resumen</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-600 text-white">
+                  {resumenCount}
+                </span>
               </div>
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-600 text-white">
-                {resumenCount}
-              </span>
+              <p className="text-[11px] text-teal-800/80 dark:text-teal-300/80 leading-relaxed mb-2.5">
+                {resumenCount === 0 
+                  ? 'Select letters or use the action menu to add them here.'
+                  : `${resumenCount} letter${resumenCount > 1 ? 's' : ''} ready for summary.`}
+              </p>
+              <Link
+                href="/resumen"
+                prefetch={false}
+                onClick={(e) => handleNavigate(e, '/resumen')}
+                className="block w-full text-center py-1.5 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs transition"
+              >
+                Open Resumen
+              </Link>
             </div>
-            <p className="text-[11px] text-teal-800/80 dark:text-teal-300/80 leading-relaxed mb-2.5">
-              {resumenCount === 0 
-                ? 'Select letters or use the action menu to add them here.'
-                : `${resumenCount} letter${resumenCount > 1 ? 's' : ''} ready for summary.`}
-            </p>
-            <Link
-              href="/resumen"
-              className="block w-full text-center py-1.5 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs transition"
-            >
-              Open Resumen
-            </Link>
-          </div>
+          )}
         </aside>
 
         {/* Right Main Table & Controls Area */}
@@ -435,13 +517,14 @@ function LettersContent() {
           {/* Top Filter and Search Bar */}
           <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-colors">
             {/* Search */}
-            <form onSubmit={handleSearchSubmit} className="flex-1 relative max-w-md">
+            <form onSubmit={handleSearchSubmit} className="flex-1 relative max-w-md" suppressHydrationWarning>
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search subject, sender, recipient, VEM no..."
+                suppressHydrationWarning
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
               />
             </form>
@@ -482,15 +565,17 @@ function LettersContent() {
               </select>
 
               {/* Export CSV Button */}
-              <button
-                type="button"
-                onClick={exportSelectedToCSV}
-                title="Export list to CSV"
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center space-x-1 text-xs cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="hidden sm:inline font-medium">Export</span>
-              </button>
+              {canExportLetters && (
+                <button
+                  type="button"
+                  onClick={exportSelectedToCSV}
+                  title="Export list to CSV"
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center space-x-1 text-xs cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="hidden sm:inline font-medium">Export</span>
+                </button>
+              )}
 
               {/* Reset Filters Button */}
               {hasActiveFilters && (
@@ -544,7 +629,7 @@ function LettersContent() {
           )}
 
           {/* Bulk Action Bar (when rows are selected) */}
-          {selectedIds.size > 0 && (
+          {canBulkSelect && selectedIds.size > 0 && (
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/80 animate-in fade-in duration-150">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white">
@@ -555,22 +640,26 @@ function LettersContent() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleAddSelectedToResumen}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-                >
-                  <BookmarkPlus className="w-3.5 h-3.5" />
-                  <span>Add to Resumen</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={exportSelectedToCSV}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Export ({selectedIds.size})</span>
-                </button>
+                {canAddSelectedToResumen && (
+                  <button
+                    type="button"
+                    onClick={handleAddSelectedToResumen}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                  >
+                    <BookmarkPlus className="w-3.5 h-3.5" />
+                    <span>Add to Resumen</span>
+                  </button>
+                )}
+                {canExportLetters && (
+                  <button
+                    type="button"
+                    onClick={exportSelectedToCSV}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Export ({selectedIds.size})</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setSelectedIds(new Set())}
@@ -610,15 +699,17 @@ function LettersContent() {
                 <table className="w-full text-left text-xs text-slate-700 dark:text-slate-200">
                   <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                     <tr>
-                      <th className="px-2 py-2 w-7 text-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.size === displayedLetters.length && displayedLetters.length > 0}
-                          onChange={toggleSelectAll}
-                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                          aria-label="Select all rows"
-                        />
-                      </th>
+                      {canBulkSelect && (
+                        <th className="px-2 py-2 w-7 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.size === displayedLetters.length && displayedLetters.length > 0}
+                            onChange={toggleSelectAll}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            aria-label="Select all rows"
+                          />
+                        </th>
+                      )}
                       <th className="px-2 py-2 w-9 text-center text-slate-400">#</th>
                       <th className="px-3.5 py-2 text-left w-20">Actions</th>
                       <th className="px-3.5 py-2">Reference No</th>
@@ -647,15 +738,17 @@ function LettersContent() {
                                 : ''
                           }`}
                         >
-                          <td className="px-2 py-2 text-center">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleSelectRow(l.id)}
-                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                              aria-label={`Select letter ${l.referenceNumber}`}
-                            />
-                          </td>
+                          {canBulkSelect && (
+                            <td className="px-2 py-2 text-center">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectRow(l.id)}
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                aria-label={`Select letter ${l.referenceNumber}`}
+                              />
+                            </td>
+                          )}
                           <td className="px-2 py-2 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
                             {(page - 1) * PAGE_SIZE + index + 1}
                           </td>
@@ -679,7 +772,13 @@ function LettersContent() {
                           <td className="px-3.5 py-2 font-mono font-semibold text-xs whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
                               <PriorityIcon priority={l.priority} />
-                              <Link href={`/letters/${l.id}`} className="text-blue-600 dark:text-blue-400 hover:underline" title="View details">
+                              <Link
+                                href={`/letters/${l.id}`}
+                                prefetch={false}
+                                onClick={(e) => handleNavigate(e, `/letters/${l.id}`)}
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                                title="View details"
+                              >
                                 {l.referenceNumber}
                               </Link>
                             </div>
@@ -778,20 +877,5 @@ function LettersContent() {
         onClose={() => setTrackingLetter(null)}
       />
     </div>
-  );
-}
-
-export default function LettersPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="p-12 text-center text-slate-400 dark:text-slate-500">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-500" />
-          <p className="text-sm">Loading letters page...</p>
-        </div>
-      }
-    >
-      <LettersContent />
-    </Suspense>
   );
 }

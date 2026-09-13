@@ -140,7 +140,7 @@ export default function StatusesManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <Link href="/settings" className="hover:text-blue-600 flex items-center gap-1">
+            <Link href="/settings" prefetch={false} className="hover:text-blue-600 flex items-center gap-1">
               <ArrowLeft className="w-3 h-3" />
               Settings
             </Link>

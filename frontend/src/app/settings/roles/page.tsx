@@ -139,7 +139,7 @@ export default function RolesManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <Link href="/settings" className="hover:text-blue-600 flex items-center gap-1">
+            <Link href="/settings" prefetch={false} className="hover:text-blue-600 flex items-center gap-1">
               <ArrowLeft className="w-3 h-3" />
               Settings
             </Link>
@@ -158,6 +158,7 @@ export default function RolesManagementPage() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <Link
             href="/settings/access-matrix"
+            prefetch={false}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold shadow-2xs transition cursor-pointer"
           >
             <Key className="w-3.5 h-3.5 text-purple-500" />

@@ -1,6 +1,6 @@
 export interface PermissionItem {
   id: string;
-  page: 'Dashboard' | 'All Letters' | 'Letter Details' | 'Encode Letter' | 'Live Search' | 'Settings';
+  page: 'Dashboard' | 'All Letters' | 'Resumen' | 'Letter Details' | 'Encode Letter' | 'Live Search' | 'Settings';
   name: string;
   description: string;
   targetType: 'button' | 'action_icon' | 'feature' | 'system';
@@ -146,6 +146,107 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     targetType: 'feature',
     defaultAdmin: true,
     defaultUser: true,
+  },
+  {
+    id: 'letters_add_to_resumen',
+    page: 'All Letters',
+    name: 'Add Selected to Resumen Button',
+    description: 'Bulk action bar button to add all checked correspondence to Resumen.',
+    targetType: 'button',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'letters_export_csv',
+    page: 'All Letters',
+    name: 'Export CSV Button',
+    description: 'Button in the filter bar to download filtered letters as CSV.',
+    targetType: 'button',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'letters_bulk_select',
+    page: 'All Letters',
+    name: 'Select Rows Checkboxes',
+    description: 'Checkboxes to select single or multiple letters for bulk operations.',
+    targetType: 'feature',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+
+  // Resumen Page
+  {
+    id: 'resumen_view',
+    page: 'Resumen',
+    name: 'View Resumen Page',
+    description: 'Access to the Resumen summary list and transmittal docket.',
+    targetType: 'feature',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'resumen_add_to',
+    page: 'Resumen',
+    name: 'Add to Resumen Action',
+    description: 'Ability to add letters to Resumen from actions menus or bulk selection.',
+    targetType: 'action_icon',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'resumen_print',
+    page: 'Resumen',
+    name: 'Print Docket Button',
+    description: 'Print executive transmittal docket with endorsement signature blocks.',
+    targetType: 'button',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'resumen_export_csv',
+    page: 'Resumen',
+    name: 'Export CSV Button',
+    description: 'Download docket data and remarks as a spreadsheet file.',
+    targetType: 'button',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'resumen_edit_remarks',
+    page: 'Resumen',
+    name: 'Edit Remarks & Directives',
+    description: 'Add or update transmittal directives and action remarks.',
+    targetType: 'feature',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'resumen_remove_item',
+    page: 'Resumen',
+    name: 'Remove Letter from Docket',
+    description: 'Remove individual correspondence items from the active docket.',
+    targetType: 'action_icon',
+    defaultAdmin: true,
+    defaultUser: true,
+  },
+  {
+    id: 'resumen_clear',
+    page: 'Resumen',
+    name: 'Clear Resumen Button',
+    description: 'Clear all letters currently staged in the transmittal docket.',
+    targetType: 'button',
+    defaultAdmin: true,
+    defaultUser: false,
+  },
+  {
+    id: 'resumen_customize_header',
+    page: 'Resumen',
+    name: 'Edit Header Button',
+    description: 'Customize official office name, title, and organization labels.',
+    targetType: 'button',
+    defaultAdmin: true,
+    defaultUser: false,
   },
 
   // Letter Details Page

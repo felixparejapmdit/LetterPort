@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { searchLetters, getDownloadUrl, SearchResultItem } from '@/lib/api';
 import { StatusBadge, PriorityBadge, TypeBadge } from '@/components/StatusBadge';
@@ -21,11 +20,13 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-function SearchContent() {
-  const searchParams = useSearchParams();
-  const initialQuery = searchParams?.get('q') || '';
-
-  const [query, setQuery] = useState(initialQuery);
+export default function SearchPage() {
+  const [query, setQuery] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('q') || '';
+    }
+    return '';
+  });
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -201,6 +202,7 @@ function SearchContent() {
                 <div>
                   <Link
                     href={`/letters/${res.letter.id}`}
+                    prefetch={false}
                     className="text-base font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition"
                   >
                     {res.letter.subject}
@@ -246,6 +248,7 @@ function SearchContent() {
 
                     <Link
                       href={`/letters/${res.letter.id}`}
+                      prefetch={false}
                       className="inline-flex items-center space-x-1 px-3 py-1 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition"
                     >
                       <span>Track & View</span>
@@ -274,20 +277,5 @@ function SearchContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function SearchPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="w-full p-16 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-500" />
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Loading search...</p>
-        </div>
-      }
-    >
-      <SearchContent />
-    </Suspense>
   );
 }

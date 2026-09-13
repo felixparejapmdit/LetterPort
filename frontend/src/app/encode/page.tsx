@@ -12,6 +12,7 @@ import {
   ClassificationItem
 } from '@/lib/api';
 import PeopleAutocomplete from '@/components/PeopleAutocomplete';
+import { useAuth } from '@/context/AuthContext';
 import { 
   Upload, 
   FileText, 
@@ -31,6 +32,12 @@ export default function EncodePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const { hasPermission } = useAuth();
+  const canSubmit = hasPermission('encode_submit');
+  const canFileUpload = hasPermission('encode_file_upload');
+  const canCustomVem = hasPermission('encode_custom_vem');
+  const canDueOverride = hasPermission('encode_due_override');
 
   const [type, setType] = useState<string>('INCOMING');
   const [referenceNumber, setReferenceNumber] = useState('');
@@ -302,19 +309,21 @@ export default function EncodePage() {
                   className="w-full pl-7 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-mono text-slate-900 dark:text-slate-100"
                 />
                 <Hash className="w-3 h-3 text-emerald-500 absolute left-2 top-1/2 -translate-y-1/2" />
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setFetchingVem(true);
-                    const nextVem = await getNextVem();
-                    if (nextVem) setVemNumber(nextVem);
-                    setFetchingVem(false);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-emerald-600 rounded cursor-pointer"
-                  title="Generate next VEM Number"
-                >
-                  <RefreshCw className={`w-3 h-3 ${fetchingVem ? 'animate-spin' : ''}`} />
-                </button>
+                {canCustomVem && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setFetchingVem(true);
+                      const nextVem = await getNextVem();
+                      if (nextVem) setVemNumber(nextVem);
+                      setFetchingVem(false);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-emerald-600 rounded cursor-pointer"
+                    title="Generate next VEM Number"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${fetchingVem ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -410,8 +419,9 @@ export default function EncodePage() {
               <input
                 type="date"
                 value={dueDate}
+                disabled={!canDueOverride}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100"
+                className={`w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100 ${!canDueOverride ? 'opacity-60 cursor-not-allowed' : ''}`}
               />
             </div>
 
@@ -482,8 +492,9 @@ export default function EncodePage() {
         </div>
 
         {/* Document Upload Zone - Supports Multiple Files */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2.5">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+        {canFileUpload && (
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
             <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               Attach Documents ({selectedFiles.length})
@@ -570,6 +581,7 @@ export default function EncodePage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Submit Button */}
         <div className="flex items-center justify-end space-x-2 pt-2">
@@ -581,23 +593,25 @@ export default function EncodePage() {
             Cancel
           </button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-500/20 disabled:opacity-50 transition flex items-center gap-1.5 cursor-pointer active:scale-95"
-          >
-            {loading ? (
-              <>
-                <RefreshCw className="w-3 h-3 animate-spin" />
-                <span>Saving Letter...</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Save Letter</span>
-              </>
-            )}
-          </button>
+          {canSubmit && (
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-500/20 disabled:opacity-50 transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="w-3 animate-spin" />
+                  <span>Saving Letter...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Save Letter</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </form>
     </div>

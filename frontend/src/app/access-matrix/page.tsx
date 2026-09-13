@@ -25,6 +25,7 @@ export default function AccessMatrixPage() {
           <div className="flex items-center gap-2 mb-1">
             <Link
               href="/settings"
+              prefetch={false}
               className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition mr-1"
               title="Back to Settings"
             >
@@ -62,6 +63,7 @@ export default function AccessMatrixPage() {
 
           <Link
             href="/settings?tab=general"
+            prefetch={false}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold shadow-sm transition"
           >
             <Settings className="w-3.5 h-3.5" />

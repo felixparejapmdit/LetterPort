@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8766';
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8766';
     return [
       {
         source: '/api/:path*',

@@ -191,6 +191,7 @@ export default function TrackingModal({ isOpen, letter, onClose }: TrackingModal
 
           <Link
             href={`/letters/${letter.id}`}
+            prefetch={false}
             onClick={onClose}
             className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition"
           >

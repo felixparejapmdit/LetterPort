@@ -29,7 +29,15 @@ export default function ResumenPage() {
     removeFromResumen, 
     clearResumen 
   } = useResumen();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
+
+  const canView = hasPermission('resumen_view');
+  const canPrint = hasPermission('resumen_print');
+  const canExportCSV = hasPermission('resumen_export_csv');
+  const canClear = hasPermission('resumen_clear');
+  const canCustomizeHeader = hasPermission('resumen_customize_header');
+  const canEditRemarks = hasPermission('resumen_edit_remarks');
+  const canRemoveItem = hasPermission('resumen_remove_item');
 
   const [docketTitle, setDocketTitle] = useState('Letters Summary');
   const [docketOffice, setDocketOffice] = useState('Executive Office');
@@ -96,6 +104,32 @@ export default function ResumenPage() {
     day: 'numeric'
   });
 
+  if (!canView) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-12 text-center shadow-2xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 flex items-center justify-center mx-auto mb-4 text-amber-600 dark:text-amber-400">
+          <AlertTriangle className="w-7 h-7" />
+        </div>
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
+          Access Restricted
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto leading-relaxed">
+          You do not have permission to view the Resumen Correspondence Summary. Please contact an administrator.
+        </p>
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <Link
+            href="/letters"
+            prefetch={false}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to All Letters</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Top Header & Actions */}
@@ -104,6 +138,7 @@ export default function ResumenPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/letters"
+              prefetch={false}
               className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               title="Back to All Letters"
             >
@@ -128,6 +163,7 @@ export default function ResumenPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/letters"
+              prefetch={false}
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs shadow-2xs transition cursor-pointer"
             >
               <PlusCircle className="w-3.5 h-3.5 text-blue-500" />
@@ -136,36 +172,42 @@ export default function ResumenPage() {
 
             {resumenLetters.length > 0 && (
               <>
-                <button
-                  type="button"
-                  onClick={handleExportCSV}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs shadow-2xs transition cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Export CSV</span>
-                </button>
+                {canExportCSV && (
+                  <button
+                    type="button"
+                    onClick={handleExportCSV}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs shadow-2xs transition cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Export CSV</span>
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-sm shadow-teal-500/20 transition cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print</span>
-                </button>
+                {canPrint && (
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-sm shadow-teal-500/20 transition cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print</span>
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm('Clear all letters from Resumen?')) {
-                      clearResumen();
-                    }
-                  }}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
-                  title="Clear Resumen"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {canClear && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm('Clear all letters from Resumen?')) {
+                        clearResumen();
+                      }
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                    title="Clear Resumen"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -234,6 +276,7 @@ export default function ResumenPage() {
           <div className="mt-5 flex items-center justify-center gap-3">
             <Link
               href="/letters"
+              prefetch={false}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm shadow-blue-500/20 transition"
             >
               <FileText className="w-4 h-4" />
@@ -291,13 +334,15 @@ export default function ResumenPage() {
                 <div>
                   <span className="font-semibold text-slate-700 dark:text-slate-300 print:text-black">Prepared By:</span> {user?.username || 'Staff'}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setEditingHeader(!editingHeader)}
-                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline print:hidden"
-                >
-                  {editingHeader ? 'Done' : 'Edit Header'}
-                </button>
+                {canCustomizeHeader && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingHeader(!editingHeader)}
+                    className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline print:hidden cursor-pointer"
+                  >
+                    {editingHeader ? 'Done' : 'Edit Header'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -340,6 +385,7 @@ export default function ResumenPage() {
                         <div className="flex items-center gap-1">
                           <Link
                             href={`/letters/${l.id}`}
+                            prefetch={false}
                             className="p-1 rounded text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition"
                             title="View"
                           >
@@ -347,19 +393,22 @@ export default function ResumenPage() {
                           </Link>
                           <Link
                             href={`/letters/${l.id}?sticker=true`}
+                            prefetch={false}
                             className="p-1 rounded text-slate-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition"
                             title="Routing Slip"
                           >
                             <QrCode className="w-3.5 h-3.5" />
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => removeFromResumen(l.id)}
-                            className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
-                            title="Remove"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canRemoveItem && (
+                            <button
+                              type="button"
+                              onClick={() => removeFromResumen(l.id)}
+                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                              title="Remove"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
 
@@ -411,13 +460,19 @@ export default function ResumenPage() {
                       {/* Remarks */}
                       <td className="px-3.5 py-2.5">
                         <div className="print:hidden">
-                          <input
-                            type="text"
-                            value={remark}
-                            onChange={(e) => updateRemark(l.id, e.target.value)}
-                            placeholder="Add remark or note..."
-                            className="w-full px-2 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-slate-900 dark:text-slate-100"
-                          />
+                          {canEditRemarks ? (
+                            <input
+                              type="text"
+                              value={remark}
+                              onChange={(e) => updateRemark(l.id, e.target.value)}
+                              placeholder="Add remark or note..."
+                              className="w-full px-2 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-slate-900 dark:text-slate-100"
+                            />
+                          ) : (
+                            <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                              {remark || <span className="text-slate-400 italic">No remarks</span>}
+                            </span>
+                          )}
                         </div>
                         <div className="hidden print:block text-[11px] font-medium text-black italic">
                           {remark || '________________________________________________'}

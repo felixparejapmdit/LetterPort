@@ -19,7 +19,8 @@ import {
   Settings,
   MousePointerClick,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ALL_PERMISSIONS, PermissionItem, getDefaultPermissionsMap } from '@/lib/permissions';
@@ -71,7 +72,8 @@ export default function AccessMatrixEditor() {
     setPage(1);
   }, [selectedPage, searchQuery]);
 
-  const pages = ['all', 'Dashboard', 'All Letters', 'Letter Details', 'Encode Letter', 'Live Search', 'Settings'];
+  // Dynamically auto-detect all pages present in ALL_PERMISSIONS
+  const pages = ['all', ...Array.from(new Set(ALL_PERMISSIONS.map((item) => item.page)))];
 
   const filteredItems = ALL_PERMISSIONS.filter((item) => {
     const matchesPage = selectedPage === 'all' || item.page === selectedPage;
@@ -129,6 +131,7 @@ export default function AccessMatrixEditor() {
     switch (page) {
       case 'Dashboard': return <LayoutDashboard className="w-3.5 h-3.5 text-blue-500" />;
       case 'All Letters': return <FileText className="w-3.5 h-3.5 text-indigo-500" />;
+      case 'Resumen': return <BookOpen className="w-3.5 h-3.5 text-teal-500" />;
       case 'Letter Details': return <FileSearch className="w-3.5 h-3.5 text-purple-500" />;
       case 'Encode Letter': return <PlusCircle className="w-3.5 h-3.5 text-emerald-500" />;
       case 'Live Search': return <Search className="w-3.5 h-3.5 text-amber-500" />;
@@ -210,15 +213,19 @@ export default function AccessMatrixEditor() {
       )}
 
       {/* Category Page Tabs - Compact */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-2">
         {pages.map((p) => {
           const isActive = selectedPage === p;
+          const count = p === 'all' 
+            ? ALL_PERMISSIONS.length 
+            : ALL_PERMISSIONS.filter((item) => item.page === p).length;
+
           return (
             <button
               key={p}
               type="button"
               onClick={() => setSelectedPage(p)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-2xs'
                   : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -226,6 +233,13 @@ export default function AccessMatrixEditor() {
             >
               {p !== 'all' && getPageIcon(p)}
               <span>{p === 'all' ? 'All Pages' : p}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                isActive
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+              }`}>
+                {count}
+              </span>
             </button>
           );
         })}

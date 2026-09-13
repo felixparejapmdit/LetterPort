@@ -179,7 +179,7 @@ export default function EncodePage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">

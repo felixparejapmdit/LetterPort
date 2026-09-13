@@ -10,10 +10,13 @@ import {
   Pencil, 
   Download, 
   QrCode, 
-  Trash2 
+  Trash2,
+  BookmarkPlus,
+  BookmarkCheck
 } from 'lucide-react';
 import { Letter } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { useResumen } from '@/context/ResumenContext';
 
 interface ActionDropdownProps {
   letter: Letter;
@@ -43,6 +46,8 @@ export default function ActionDropdown({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isAdmin, hasPermission } = useAuth();
+  const { isInResumen, toggleResumen } = useResumen();
+  const inResumen = isInResumen(letter.id);
 
   const isDashboard = pageContext === 'dashboard';
   const canTrack = hasPermission(isDashboard ? 'dashboard_track' : 'letters_track');
@@ -52,7 +57,7 @@ export default function ActionDropdown({
   const canSticker = isDashboard ? true : hasPermission('letters_sticker');
   const canDelete = hasPermission(isDashboard ? 'dashboard_delete' : 'letters_delete');
 
-  const hasAnyAction = canTrack || canView || canEdit || canDownload || canSticker || (isAdmin && canDelete);
+  const hasAnyAction = true;
 
   useEffect(() => {
     setMounted(true);
@@ -61,12 +66,14 @@ export default function ActionDropdown({
   const computeCoords = () => {
     if (!buttonRef.current) return null;
     const rect = buttonRef.current.getBoundingClientRect();
-    const menuEstimatedHeight = 220;
+    const menuEstimatedHeight = 260;
     const spaceBelow = window.innerHeight - rect.bottom;
     const placeAbove = spaceBelow < menuEstimatedHeight && rect.top > menuEstimatedHeight;
 
     const width = 176; // w-44 = 11rem = 176px
-    const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
+    const left = (rect.left + width > window.innerWidth - 12)
+      ? Math.max(12, rect.right - width)
+      : Math.max(12, rect.left);
 
     return {
       top: placeAbove ? rect.top - 6 : rect.bottom + 6,
@@ -212,6 +219,31 @@ export default function ActionDropdown({
           )}
         </div>
       )}
+
+      {/* Resumen Docket Action */}
+      <div className="py-1">
+        <button
+          type="button"
+          onClick={() => handleAction(() => toggleResumen(letter))}
+          className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition text-left cursor-pointer ${
+            inResumen
+              ? 'text-teal-700 dark:text-teal-300 bg-teal-50/70 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50 font-medium'
+              : 'text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/30 hover:text-teal-700 dark:hover:text-teal-300'
+          }`}
+        >
+          {inResumen ? (
+            <>
+              <BookmarkCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span>In Resumen (Remove)</span>
+            </>
+          ) : (
+            <>
+              <BookmarkPlus className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span>Add to Resumen</span>
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Delete Action */}
       {canDelete && onDelete && (

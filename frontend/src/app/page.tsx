@@ -31,7 +31,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 5;
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -333,6 +333,7 @@ export default function DashboardPage() {
                 <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                   <tr>
                     <th className="px-2.5 py-2 w-10 text-center text-slate-400">#</th>
+                    <th className="px-3.5 py-2 text-left w-20">Actions</th>
                     <th className="px-3.5 py-2">Reference No</th>
                     <th className="px-2.5 py-2">VEM No</th>
                     <th className="px-2.5 py-2">Type</th>
@@ -340,7 +341,6 @@ export default function DashboardPage() {
                     <th className="px-2.5 py-2">Status</th>
                     <th className="px-2.5 py-2 hidden md:table-cell">From / To</th>
                     <th className="px-2.5 py-2 hidden sm:table-cell">Dates & Due</th>
-                    <th className="px-3.5 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -350,6 +350,23 @@ export default function DashboardPage() {
                       <tr key={l.id} className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${l.priority === 'URGENT' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
                         <td className="px-2.5 py-2 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
                           {(page - 1) * PAGE_SIZE + index + 1}
+                        </td>
+                        <td className="px-3.5 py-2 text-left whitespace-nowrap">
+                          <ActionDropdown
+                            letter={l}
+                            pageContext="dashboard"
+                            onTrack={(letter) => setTrackingLetter(letter)}
+                            onEdit={(letter) => setEditingLetter(letter)}
+                            onDelete={async (letter) => {
+                              try {
+                                await deleteLetter(letter.id);
+                                loadData(page);
+                              } catch (err) {
+                                console.error('Failed to delete letter:', err);
+                              }
+                            }}
+                            downloadUrl={getDownloadUrl(l.id)}
+                          />
                         </td>
                         <td className="px-3.5 py-2 font-mono font-semibold text-xs whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
@@ -396,34 +413,17 @@ export default function DashboardPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-3.5 py-2 text-right whitespace-nowrap">
-                          <ActionDropdown
-                            letter={l}
-                            pageContext="dashboard"
-                            onTrack={(letter) => setTrackingLetter(letter)}
-                            onEdit={(letter) => setEditingLetter(letter)}
-                            onDelete={async (letter) => {
-                              try {
-                                await deleteLetter(letter.id);
-                                loadData(page);
-                              } catch (err) {
-                                console.error('Failed to delete letter:', err);
-                              }
-                            }}
-                            downloadUrl={getDownloadUrl(l.id)}
-                          />
-                        </td>
-                    </tr>
+                      </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
 
-            {/* 15-item Pagination Bar */}
+            {/* 5-item Pagination Bar */}
             <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-xs text-slate-500 dark:text-slate-400">
               <div>
-                Showing {totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, totalCount)} of {totalCount} items (15 / page)
+                Showing {totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, totalCount)} of {totalCount} items (5 / page)
               </div>
               <div className="flex items-center gap-1">
                 <button

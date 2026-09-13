@@ -351,7 +351,7 @@ function SettingsContent() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
+    <div className="w-full space-y-6 sm:space-y-8">
       {/* Title */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
@@ -592,10 +592,10 @@ function SettingsContent() {
               <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="px-3 py-3.5 w-12 text-center text-slate-400">#</th>
+                  <th className="px-4 py-3.5 text-left w-24">Actions</th>
                   <th className="px-5 py-3.5">Username</th>
                   <th className="px-4 py-3.5">Role</th>
                   <th className="px-4 py-3.5">Password</th>
-                  <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -603,6 +603,28 @@ function SettingsContent() {
                   <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="px-3 py-3.5 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
                       {idx + 1}
+                    </td>
+                    <td className="px-4 py-3.5 text-left whitespace-nowrap">
+                      <div className="inline-flex items-center space-x-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditUser(u)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                          title="Edit User / Change Password"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        {u.id !== currentUser?.id && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-white">
                       <div className="flex items-center gap-3">
@@ -628,28 +650,6 @@ function SettingsContent() {
                     </td>
                     <td className="px-4 py-3.5 font-mono text-xs text-slate-500">
                       {u.password || '••••••••'}
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <div className="inline-flex items-center space-x-1.5">
-                        <button
-                          type="button"
-                          onClick={() => openEditUser(u)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                          title="Edit User / Change Password"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        {u.id !== currentUser?.id && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteUser(u)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-                            title="Delete User"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
                     </td>
                   </tr>
                 ))}

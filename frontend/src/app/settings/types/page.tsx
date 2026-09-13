@@ -134,7 +134,7 @@ export default function LetterTypesManagementPage() {
   const paginatedTypes = types.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
+    <div className="w-full space-y-4">
       {/* Header & Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div>
@@ -185,12 +185,12 @@ export default function LetterTypesManagementPage() {
             <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="py-2.5 px-3 w-12 text-center text-slate-400">#</th>
+                <th className="py-2.5 px-3 text-left w-20">Actions</th>
                 <th className="py-2.5 px-3">Type Code</th>
                 <th className="py-2.5 px-3">Display Label</th>
                 <th className="py-2.5 px-3">Description</th>
                 <th className="py-2.5 px-3">Color Accent</th>
                 <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -211,6 +211,22 @@ export default function LetterTypesManagementPage() {
                   <tr key={t.id || t.code} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
                     <td className="py-2 px-3 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
                       {(page - 1) * PAGE_SIZE + idx + 1}
+                    </td>
+                    <td className="py-2 px-3 text-left space-x-1 whitespace-nowrap">
+                      <button
+                        onClick={() => openEditModal(t)}
+                        className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition cursor-pointer"
+                        title="Edit Type"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(t)}
+                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded transition cursor-pointer"
+                        title="Delete Type"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                     <td className="py-2 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
                       {t.code}
@@ -234,22 +250,6 @@ export default function LetterTypesManagementPage() {
                       }`}>
                         {t.isActive !== false ? 'Active' : 'Inactive'}
                       </span>
-                    </td>
-                    <td className="py-2 px-3 text-right space-x-1">
-                      <button
-                        onClick={() => openEditModal(t)}
-                        className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition cursor-pointer"
-                        title="Edit Type"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(t)}
-                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded transition cursor-pointer"
-                        title="Delete Type"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
                     </td>
                   </tr>
                 ))

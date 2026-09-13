@@ -78,7 +78,12 @@ export class AuthController {
         return;
       }
 
-      const user = await this.repository.getUserById(payload.id);
+      let user = await this.repository.getUserById(payload.id);
+      // Fallback: If id is not found (e.g. database reseeded/migrated), look up by username
+      if (!user && payload.username && this.repository.getUserByUsername) {
+        user = await this.repository.getUserByUsername(payload.username);
+      }
+
       if (!user) {
         res.status(401).json({ success: false, message: 'User not found' });
         return;

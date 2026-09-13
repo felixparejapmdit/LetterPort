@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import SearchModal from '@/components/SearchModal';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { ResumenProvider } from '@/context/ResumenContext';
 import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
@@ -50,7 +51,9 @@ export default function RootLayout({
       <body className="font-sans antialiased text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 min-h-screen flex flex-col transition-colors">
         <AuthProvider>
           <ThemeProvider>
-            <AppShell>{children}</AppShell>
+            <ResumenProvider>
+              <AppShell>{children}</AppShell>
+            </ResumenProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

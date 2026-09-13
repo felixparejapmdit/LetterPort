@@ -53,19 +53,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 2. Load auth credentials
         const storedAuth = localStorage.getItem('letterport_auth');
         if (storedAuth) {
-          const parsed = JSON.parse(storedAuth);
-          if (parsed?.token && parsed?.user) {
-            setToken(parsed.token);
-            setUser(parsed.user);
-            // Verify in background
-            fetchCurrentUser(parsed.token)
-              .then((freshUser) => {
-                if (freshUser && freshUser.id && freshUser.role) {
-                  setUser(freshUser);
-                  localStorage.setItem('letterport_auth', JSON.stringify({ token: parsed.token, user: freshUser }));
-                }
-              })
-              .catch(() => {});
+          try {
+            const parsed = JSON.parse(storedAuth);
+            if (parsed?.token && parsed?.user) {
+              setToken(parsed.token);
+              setUser(parsed.user);
+              // Verify in background
+              fetchCurrentUser(parsed.token)
+                .then((freshUser) => {
+                  if (freshUser && freshUser.id && freshUser.role) {
+                    setUser(freshUser);
+                    const tokenPayload = {
+                      id: freshUser.id,
+                      username: freshUser.username,
+                      role: freshUser.role,
+                      issuedAt: new Date().toISOString()
+                    };
+                    const refreshedToken = typeof window !== 'undefined' ? btoa(JSON.stringify(tokenPayload)) : parsed.token;
+                    setToken(refreshedToken);
+                    localStorage.setItem('letterport_auth', JSON.stringify({ token: refreshedToken, user: freshUser }));
+                  } else {
+                    setUser(null);
+                    setToken(null);
+                    localStorage.removeItem('letterport_auth');
+                  }
+                })
+                .catch(() => {
+                  setUser(null);
+                  setToken(null);
+                  localStorage.removeItem('letterport_auth');
+                });
+            }
+          } catch {
+            localStorage.removeItem('letterport_auth');
           }
         }
       } catch (err) {
